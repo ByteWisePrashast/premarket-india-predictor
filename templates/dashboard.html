@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}?v=2.5">
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" defer></script>
     <script>
       (function() {
@@ -1716,12 +1716,12 @@
             <!-- Dropzone Box -->
             <div class="dropzone-box" id="portfolioDropzone" onclick="document.getElementById('portfolioFileInput').click()">
               <input type="file" id="portfolioFileInput" accept="image/*" style="display: none;" onchange="handleFileSelect(event)">
-              <div class="dropzone-inner" id="dropzoneContent">
+              <div class="dropzone-inner" id="dropzoneContent" style="display: flex;">
                 <div class="dz-icon">📥</div>
                 <strong>Click to Browse Image or Drag & Drop Screenshot Here</strong>
                 <span>Supports PNG, JPG, WebP — or press <kbd>Ctrl+V</kbd> to paste directly from clipboard</span>
               </div>
-              <div class="ocr-progress-wrap hidden" id="ocrProgressWrap">
+              <div class="ocr-progress-wrap hidden" id="ocrProgressWrap" style="display: none !important;">
                 <div class="ocr-spinner"></div>
                 <span id="ocrStatusText">Analyzing screenshot image...</span>
               </div>
@@ -1737,7 +1737,7 @@
             </details>
 
             <!-- EXTRACTED HOLDINGS PREVIEW & QUICK-EDIT TABLE -->
-            <div class="extracted-preview-box hidden" id="extractedPreviewBox">
+            <div class="extracted-preview-box hidden" id="extractedPreviewBox" style="display: none;">
               <div class="epb-header">
                 <h4>Detected Holdings (<span id="extractedCountLabel">0</span> schemes/assets):</h4>
                 <div class="epb-actions">
@@ -2819,8 +2819,15 @@
         const content = document.getElementById('dropzoneContent');
         const status = document.getElementById('ocrStatusText');
 
-        if (wrap) wrap.classList.remove('hidden');
-        if (content) content.classList.add('hidden');
+        if (wrap) {
+          wrap.style.setProperty('display', 'flex', 'important');
+          wrap.classList.add('active');
+          wrap.classList.remove('hidden');
+        }
+        if (content) {
+          content.style.setProperty('display', 'none', 'important');
+          content.classList.add('hidden');
+        }
         if (status) status.textContent = `Reading ${file.name || 'screenshot'}...`;
 
         const reader = new FileReader();
@@ -2859,8 +2866,15 @@
       function finishOcrProcessing(extractedText) {
         const wrap = document.getElementById('ocrProgressWrap');
         const content = document.getElementById('dropzoneContent');
-        if (wrap) wrap.classList.add('hidden');
-        if (content) content.classList.remove('hidden');
+        if (wrap) {
+          wrap.style.setProperty('display', 'none', 'important');
+          wrap.classList.remove('active');
+          wrap.classList.add('hidden');
+        }
+        if (content) {
+          content.style.setProperty('display', 'flex', 'important');
+          content.classList.remove('hidden');
+        }
 
         document.getElementById('manualStatementText').value = extractedText;
         sendTextToScanApi(extractedText);
@@ -2918,6 +2932,7 @@
         const countLabel = document.getElementById('extractedCountLabel');
 
         if (!previewBox || !tbody) return;
+        previewBox.style.setProperty('display', 'block', 'important');
         previewBox.classList.remove('hidden');
         countLabel.textContent = holdings.length;
 

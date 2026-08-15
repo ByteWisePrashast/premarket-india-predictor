@@ -2,6 +2,9 @@
    Pre-Market India & Multi-Asset Engine - Complete Modern Design System
    ========================================================================== */
 
+/* Global utility — must stay at top so spinner is hidden on page load */
+.hidden { display: none !important; }
+
 :root,
 [data-theme="dark"] {
   color-scheme: dark;
@@ -3582,11 +3585,15 @@ body {
 }
 
 .ocr-progress-wrap {
-  display: flex;
+  display: none;
   flex-direction: column;
   align-items: center;
   gap: 12px;
   padding: 10px 0;
+}
+
+.ocr-progress-wrap.active {
+  display: flex !important;
 }
 
 .ocr-spinner {
