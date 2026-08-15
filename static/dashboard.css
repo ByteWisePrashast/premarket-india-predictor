@@ -2,7 +2,8 @@
    Pre-Market India & Multi-Asset Engine - Complete Modern Design System
    ========================================================================== */
 
-:root {
+:root,
+[data-theme="dark"] {
   color-scheme: dark;
   --bg: #0b0f17;
   --bg-subtle: #101622;
@@ -46,6 +47,57 @@
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
   --shadow-md: 0 4px 14px rgba(0,0,0,0.35);
   --shadow-lg: 0 10px 28px rgba(0,0,0,0.45);
+
+  --nav-bg: rgba(16, 22, 34, 0.88);
+  --input-bg: #0b0f17;
+  --table-hover-bg: #1a253a;
+  --badge-bg: #1e2c44;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f8fafc;
+  --bg-subtle: #f1f5f9;
+  --panel: #ffffff;
+  --panel-card: #f8fafc;
+  --panel-hover: #f1f5f9;
+  --line: #e2e8f0;
+  --line-light: #cbd5e1;
+  
+  --text: #0f172a;
+  --text-muted: #64748b;
+  --text-dim: #94a3b8;
+  
+  --accent: #0284c7;
+  --accent-glow: rgba(2, 132, 199, 0.15);
+  --accent-deep: #0369a1;
+
+  --positive: #059669;
+  --positive-bg: rgba(5, 150, 105, 0.1);
+  --positive-border: rgba(5, 150, 105, 0.25);
+  --positive-glow: rgba(5, 150, 105, 0.2);
+
+  --negative: #e11d48;
+  --negative-bg: rgba(225, 29, 72, 0.1);
+  --negative-border: rgba(225, 29, 72, 0.25);
+  --negative-glow: rgba(225, 29, 72, 0.2);
+
+  --neutral: #d97706;
+  --neutral-bg: rgba(217, 119, 6, 0.1);
+  --neutral-border: rgba(217, 119, 6, 0.25);
+
+  --stock-color: #0284c7;
+  --etf-color: #d97706;
+  --mf-color: #7c3aed;
+
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 14px rgba(0,0,0,0.08);
+  --shadow-lg: 0 10px 28px rgba(0,0,0,0.12);
+
+  --nav-bg: rgba(255, 255, 255, 0.92);
+  --input-bg: #ffffff;
+  --table-hover-bg: #f1f5f9;
+  --badge-bg: #e2e8f0;
 }
 
 * {
@@ -57,13 +109,14 @@
 body {
   background: var(--bg);
   background-image: 
-    radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.08) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(167, 139, 250, 0.06) 0px, transparent 50%);
+    radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.06) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(167, 139, 250, 0.05) 0px, transparent 50%);
   color: var(--text);
   font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   line-height: 1.5;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 /* ==========================================================================
@@ -248,6 +301,42 @@ body {
   background: var(--panel-hover);
   border-color: var(--line-light);
   transform: translateY(-1px);
+}
+
+.btn-theme-toggle {
+  background: var(--panel-card);
+  border: 1px solid var(--line);
+  color: var(--text);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 15px;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.btn-theme-toggle:hover {
+  background: var(--panel-hover);
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+[data-theme="dark"] .theme-sun-icon {
+  display: inline-block;
+}
+[data-theme="dark"] .theme-moon-icon {
+  display: none;
+}
+
+[data-theme="light"] .theme-sun-icon {
+  display: none;
+}
+[data-theme="light"] .theme-moon-icon {
+  display: inline-block;
 }
 
 .btn-primary {
@@ -2327,3 +2416,185 @@ body {
     gap: 16px;
   }
 }
+
+/* ==========================================================================
+   LIGHT THEME ENHANCEMENTS & OVERRIDES
+   ========================================================================== */
+
+[data-theme="light"] .master-navbar {
+  background: rgba(255, 255, 255, 0.92);
+  border-bottom-color: #e2e8f0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .nav-links {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+}
+
+[data-theme="light"] .nav-link-btn {
+  color: #475569;
+}
+
+[data-theme="light"] .nav-link-btn:hover {
+  color: #0f172a;
+  background: #e2e8f0;
+}
+
+[data-theme="light"] .nav-link-btn.active {
+  background: #0284c7;
+  color: #ffffff;
+}
+
+[data-theme="light"] .panel {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .prob-card {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .prob-meter {
+  background: #e2e8f0;
+}
+
+[data-theme="light"] .summary-banner {
+  background: #f0f9ff;
+  border-color: #bae6fd;
+  color: #0369a1;
+}
+
+[data-theme="light"] .search-container {
+  background: #ffffff;
+  border-color: #e2e8f0;
+}
+
+[data-theme="light"] .search-input-wrapper input {
+  background: #f8fafc;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+[data-theme="light"] .suggestions-dropdown {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .suggestion-item {
+  color: #0f172a;
+  border-bottom-color: #f1f5f9;
+}
+
+[data-theme="light"] .suggestion-item:hover {
+  background: #f8fafc;
+}
+
+[data-theme="light"] .quick-chips a {
+  background: #f1f5f9;
+  color: #334155;
+  border-color: #cbd5e1;
+}
+
+[data-theme="light"] .quick-chips a:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+[data-theme="light"] .watchlist-table th {
+  background: #f8fafc;
+  color: #475569;
+  border-bottom-color: #e2e8f0;
+}
+
+[data-theme="light"] .watchlist-table td {
+  border-bottom-color: #f1f5f9;
+  color: #1e293b;
+}
+
+[data-theme="light"] .watchlist-table tr:hover td {
+  background: #f8fafc;
+}
+
+[data-theme="light"] .p-input,
+[data-theme="light"] .calc-num-input,
+[data-theme="light"] .p-select,
+[data-theme="light"] .modal-input {
+  background: #ffffff;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+[data-theme="light"] .p-quick-chips button {
+  background: #f1f5f9;
+  color: #334155;
+  border-color: #cbd5e1;
+}
+
+[data-theme="light"] .p-quick-chips button:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+[data-theme="light"] .css-box,
+[data-theme="light"] .psg-card,
+[data-theme="light"] .sz-card,
+[data-theme="light"] .pps-box,
+[data-theme="light"] .level-box,
+[data-theme="light"] .ret-cell,
+[data-theme="light"] .sip-fund-card {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .calc-inputs-card,
+[data-theme="light"] .calc-results-card,
+[data-theme="light"] .planner-control-card,
+[data-theme="light"] .planner-donut-box,
+[data-theme="light"] .planner-table-box,
+[data-theme="light"] .sip-basket-box,
+[data-theme="light"] .calc-chart-box {
+  background: #ffffff;
+  border-color: #e2e8f0;
+}
+
+[data-theme="light"] .highlight-css-box {
+  background: #f0f9ff;
+  border-color: #7dd3fc;
+}
+
+[data-theme="light"] .stepup-comparison-banner {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #065f46;
+}
+
+[data-theme="light"] .modal-card {
+  background: #ffffff;
+  color: #0f172a;
+  border-color: #e2e8f0;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="light"] .modal-trade-summary,
+[data-theme="light"] .modal-checklist {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+[data-theme="light"] .btn-refresh {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #334155;
+}
+
+[data-theme="light"] .btn-refresh:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
