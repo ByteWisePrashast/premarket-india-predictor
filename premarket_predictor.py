@@ -575,7 +575,18 @@ def make_context_summary(report: MarketReport) -> str:
     )
 
 
-def build_report() -> MarketReport:
+_CACHED_REPORT: MarketReport | None = None
+_CACHED_REPORT_TIME: float = 0.0
+REPORT_CACHE_TTL_SECONDS: float = 60.0
+
+
+def build_report(force_refresh: bool = False) -> MarketReport:
+    global _CACHED_REPORT, _CACHED_REPORT_TIME
+    now_ts = time.time()
+
+    if not force_refresh and _CACHED_REPORT is not None and (now_ts - _CACHED_REPORT_TIME) < REPORT_CACHE_TTL_SECONDS:
+        return _CACHED_REPORT
+
     load_dotenv()
     session = requests_session()
 
@@ -607,6 +618,9 @@ def build_report() -> MarketReport:
         component_scores=component_scores,
     )
     report.context_summary = make_context_summary(report)
+
+    _CACHED_REPORT = report
+    _CACHED_REPORT_TIME = now_ts
     return report
 
 
