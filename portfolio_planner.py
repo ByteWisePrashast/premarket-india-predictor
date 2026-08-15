@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """
-Quantitative Portfolio Generator & Smart SIP Architect for Indian Markets.
+Quantitative Portfolio Generator, Smart SIP Architect & Wealth Calculator Suite for Indian Markets.
 
 Provides:
-1. Goal-based Lump-Sum Portfolio Allocator (Amount, Time Horizon, Risk Appetite, Expected Return).
-2. Smart SIP Basket Builder (Monthly SIP Amount, Horizon, Low/Medium/High Risk).
-3. Exact asset splits across Index ETFs, Top-Ranked AMFI Mutual Funds, Commodities (Gold/Silver), and High-Conviction Stocks.
-4. Monte Carlo & Compound Wealth Projections (Conservative, Expected, Optimistic).
-5. Maximum Historical Drawdown and Downside Risk Profiling.
+1. Regular Monthly SIP Compound Calculator.
+2. Step-Up (Top-Up) SIP Calculator (Annual % increase vs flat SIP comparison).
+3. Lump-Sum Compound Growth Calculator (Nominal vs Inflation-Adjusted Purchasing Power).
+4. Goal-based Lump-Sum Portfolio Allocator (Asset Allocation across ETFs, MFs, Gold, Bluechips).
+5. Smart Multi-Fund Monthly SIP Basket Builder.
+6. Year-by-Year Compounding Schedules & Interactive Visual SVG Trajectory Charts.
 """
 
 from __future__ import annotations
@@ -29,19 +30,324 @@ ASSET_CLASS_PROFILES = {
 }
 
 
-@dataclass
-class AllocationItem:
-    asset_name: str
-    symbol_or_code: str
-    asset_type: str
-    category: str
-    allocation_pct: float
-    allocation_rupees: float
-    expected_cagr_pct: float
-    historical_sharpe: float
-    max_drawdown_pct: float
-    rationale: str
+# ============================================================================
+# 1. REGULAR SIP CALCULATOR
+# ============================================================================
 
+def calculate_regular_sip(
+    monthly_amount: float,
+    annual_return_pct: float = 14.0,
+    horizon_years: float = 10.0,
+) -> dict[str, Any]:
+    """Calculates Future Value, Total Invested, Wealth Gain, and Year-by-Year compounding for a flat monthly SIP."""
+    p = max(500.0, float(monthly_amount))
+    r_annual = max(1.0, float(annual_return_pct))
+    years = max(1.0, float(horizon_years))
+    total_months = int(years * 12)
+    i = (r_annual / 100.0) / 12.0
+
+    # Total Invested
+    total_invested = p * total_months
+
+    # Future Value formula: P * [((1 + i)^n - 1) / i] * (1 + i)
+    fv = p * (((1.0 + i) ** total_months - 1.0) / i) * (1.0 + i)
+    wealth_gain = fv - total_invested
+    gain_pct = (wealth_gain / total_invested * 100.0) if total_invested else 0.0
+
+    # Year-by-Year Growth Table
+    yearly_schedule = []
+    for y in range(1, int(years) + 1):
+        m = y * 12
+        inv_y = p * m
+        fv_y = p * (((1.0 + i) ** m - 1.0) / i) * (1.0 + i)
+        gain_y = fv_y - inv_y
+        yearly_schedule.append({
+            "year": y,
+            "total_invested": fmt_curr(inv_y),
+            "total_invested_num": inv_y,
+            "future_value": fmt_curr(fv_y),
+            "future_value_num": fv_y,
+            "wealth_gain": fmt_curr(gain_y),
+            "wealth_gain_num": gain_y,
+        })
+
+    chart_svg = make_trajectory_chart_svg(yearly_schedule, mode="sip")
+
+    return {
+        "ok": True,
+        "type": "regular_sip",
+        "monthly_investment": fmt_curr(p),
+        "monthly_investment_num": p,
+        "expected_return_pct": f"{r_annual:.1f}%",
+        "expected_return_pct_num": r_annual,
+        "time_period_years": f"{years:.0f} Years",
+        "time_period_years_num": years,
+        "total_invested": fmt_curr(total_invested),
+        "total_invested_num": total_invested,
+        "wealth_gain": fmt_curr(wealth_gain),
+        "wealth_gain_num": wealth_gain,
+        "gain_pct": fmt_pct(gain_pct),
+        "future_value": fmt_curr(fv),
+        "future_value_num": fv,
+        "yearly_schedule": yearly_schedule,
+        "chart_svg": chart_svg,
+    }
+
+
+# ============================================================================
+# 2. STEP-UP (TOP-UP) SIP CALCULATOR
+# ============================================================================
+
+def calculate_step_up_sip(
+    initial_monthly_amount: float,
+    annual_step_up_pct: float = 10.0,
+    annual_return_pct: float = 14.0,
+    horizon_years: float = 10.0,
+) -> dict[str, Any]:
+    """Calculates wealth creation when monthly SIP is increased by a fixed percentage (e.g. 10%) every year."""
+    p_initial = max(500.0, float(initial_monthly_amount))
+    step_up_pct = max(0.0, float(annual_step_up_pct))
+    r_annual = max(1.0, float(annual_return_pct))
+    years = max(1.0, float(horizon_years))
+    total_years_int = int(years)
+    i = (r_annual / 100.0) / 12.0
+
+    total_invested = 0.0
+    fv_step_up = 0.0
+    yearly_schedule = []
+
+    # Calculate month-by-month compounding with yearly step-up
+    current_monthly_sip = p_initial
+
+    for y in range(1, total_years_int + 1):
+        year_invested = 0.0
+        for m in range(1, 13):
+            # Months remaining till horizon for this specific installment
+            months_remaining = (total_years_int - y) * 12 + (12 - m + 1)
+            future_val_of_installment = current_monthly_sip * ((1.0 + i) ** months_remaining)
+            fv_step_up += future_val_of_installment
+            year_invested += current_monthly_sip
+            total_invested += current_monthly_sip
+
+        # Cumulative metrics at end of year y
+        # We compute FV up to year y for the schedule
+        cumulative_inv = total_invested
+        yearly_schedule.append({
+            "year": y,
+            "monthly_sip_this_year": fmt_curr(current_monthly_sip),
+            "monthly_sip_this_year_num": current_monthly_sip,
+            "total_invested": fmt_curr(cumulative_inv),
+            "total_invested_num": cumulative_inv,
+            "future_value": fmt_curr(fv_step_up if y == total_years_int else 0.0), # filled below
+        })
+
+        # Step up monthly SIP for next year
+        current_monthly_sip = current_monthly_sip * (1.0 + (step_up_pct / 100.0))
+
+    # Accurate intermediate FV calculations for the schedule
+    for idx, row in enumerate(yearly_schedule):
+        y_sub = row["year"]
+        sub_fv = 0.0
+        cur_p = p_initial
+        for y_i in range(1, y_sub + 1):
+            for m_i in range(1, 13):
+                rem_m = (y_sub - y_i) * 12 + (12 - m_i + 1)
+                sub_fv += cur_p * ((1.0 + i) ** rem_m)
+            cur_p = cur_p * (1.0 + (step_up_pct / 100.0))
+        row["future_value"] = fmt_curr(sub_fv)
+        row["future_value_num"] = sub_fv
+        row["wealth_gain"] = fmt_curr(sub_fv - row["total_invested_num"])
+        row["wealth_gain_num"] = sub_fv - row["total_invested_num"]
+
+    wealth_gain_step_up = fv_step_up - total_invested
+    gain_pct_step_up = (wealth_gain_step_up / total_invested * 100.0) if total_invested else 0.0
+
+    # Flat SIP comparison for the same starting amount
+    flat_sip = calculate_regular_sip(p_initial, r_annual, years)
+    flat_fv = flat_sip["future_value_num"]
+    flat_inv = flat_sip["total_invested_num"]
+    step_up_advantage_rupees = fv_step_up - flat_fv
+    step_up_multiplier = (fv_step_up / flat_fv) if flat_fv > 0 else 1.0
+
+    chart_svg = make_trajectory_chart_svg(yearly_schedule, mode="step_up")
+
+    return {
+        "ok": True,
+        "type": "step_up_sip",
+        "initial_monthly_investment": fmt_curr(p_initial),
+        "initial_monthly_investment_num": p_initial,
+        "annual_step_up_pct": f"{step_up_pct:.1f}%",
+        "annual_step_up_pct_num": step_up_pct,
+        "expected_return_pct": f"{r_annual:.1f}%",
+        "expected_return_pct_num": r_annual,
+        "time_period_years": f"{years:.0f} Years",
+        "time_period_years_num": years,
+        "total_invested": fmt_curr(total_invested),
+        "total_invested_num": total_invested,
+        "wealth_gain": fmt_curr(wealth_gain_step_up),
+        "wealth_gain_num": wealth_gain_step_up,
+        "gain_pct": fmt_pct(gain_pct_step_up),
+        "future_value": fmt_curr(fv_step_up),
+        "future_value_num": fv_step_up,
+        "comparison_vs_flat_sip": {
+            "flat_sip_invested": fmt_curr(flat_inv),
+            "flat_sip_corpus": fmt_curr(flat_fv),
+            "extra_corpus_created": fmt_curr(step_up_advantage_rupees),
+            "multiplier": f"{step_up_multiplier:.2f}x",
+        },
+        "yearly_schedule": yearly_schedule,
+        "chart_svg": chart_svg,
+    }
+
+
+# ============================================================================
+# 3. LUMP-SUM INVESTMENT CALCULATOR
+# ============================================================================
+
+def calculate_lump_sum_calculator(
+    principal_amount: float,
+    annual_return_pct: float = 14.0,
+    horizon_years: float = 10.0,
+    inflation_rate_pct: float = 6.0,
+) -> dict[str, Any]:
+    """Calculates compound growth on a one-time lump-sum investment, with inflation-adjusted real purchasing power."""
+    p = max(5000.0, float(principal_amount))
+    r_annual = max(1.0, float(annual_return_pct))
+    years = max(1.0, float(horizon_years))
+    inflation = max(0.0, float(inflation_rate_pct))
+
+    # FV = P * (1 + r)^n
+    fv_nominal = p * ((1.0 + (r_annual / 100.0)) ** years)
+    wealth_gain_nominal = fv_nominal - p
+    gain_pct_nominal = (wealth_gain_nominal / p * 100.0) if p else 0.0
+
+    # Inflation adjusted real purchasing power
+    # Real FV = Nominal FV / (1 + inflation)^years
+    fv_real = fv_nominal / ((1.0 + (inflation / 100.0)) ** years)
+    wealth_gain_real = fv_real - p
+
+    yearly_schedule = []
+    for y in range(1, int(years) + 1):
+        fv_y = p * ((1.0 + (r_annual / 100.0)) ** y)
+        fv_real_y = fv_y / ((1.0 + (inflation / 100.0)) ** y)
+        gain_y = fv_y - p
+        yearly_schedule.append({
+            "year": y,
+            "total_invested": fmt_curr(p),
+            "total_invested_num": p,
+            "future_value": fmt_curr(fv_y),
+            "future_value_num": fv_y,
+            "wealth_gain": fmt_curr(gain_y),
+            "wealth_gain_num": gain_y,
+            "real_purchasing_power": fmt_curr(fv_real_y),
+        })
+
+    chart_svg = make_trajectory_chart_svg(yearly_schedule, mode="lumpsum")
+
+    return {
+        "ok": True,
+        "type": "lumpsum",
+        "initial_investment": fmt_curr(p),
+        "initial_investment_num": p,
+        "expected_return_pct": f"{r_annual:.1f}%",
+        "expected_return_pct_num": r_annual,
+        "time_period_years": f"{years:.0f} Years",
+        "time_period_years_num": years,
+        "inflation_rate_pct": f"{inflation:.1f}%",
+        "total_invested": fmt_curr(p),
+        "total_invested_num": p,
+        "wealth_gain_nominal": fmt_curr(wealth_gain_nominal),
+        "wealth_gain_nominal_num": wealth_gain_nominal,
+        "gain_pct": fmt_pct(gain_pct_nominal),
+        "future_value_nominal": fmt_curr(fv_nominal),
+        "future_value_nominal_num": fv_nominal,
+        "future_value_inflation_adjusted": fmt_curr(fv_real),
+        "future_value_inflation_adjusted_num": fv_real,
+        "real_wealth_gain": fmt_curr(wealth_gain_real),
+        "yearly_schedule": yearly_schedule,
+        "chart_svg": chart_svg,
+    }
+
+
+# ============================================================================
+# VISUAL TRAJECTORY SVG GENERATOR
+# ============================================================================
+
+def make_trajectory_chart_svg(yearly_schedule: list[dict[str, Any]], mode: str = "sip", width: int = 720, height: int = 240) -> str:
+    """Generates an interactive SVG area and line compounding trajectory chart."""
+    if not yearly_schedule:
+        return ""
+
+    padding_left = 65
+    padding_right = 25
+    padding_top = 20
+    padding_bottom = 35
+
+    plot_w = width - padding_left - padding_right
+    plot_h = height - padding_top - padding_bottom
+
+    n = len(yearly_schedule)
+    max_val = max(row["future_value_num"] for row in yearly_schedule) * 1.08
+    max_val = max(max_val, 10000.0)
+
+    # Compute coordinates
+    invested_points = []
+    future_points = []
+
+    for idx, row in enumerate(yearly_schedule):
+        x = padding_left + (idx / max(1, n - 1)) * plot_w
+        y_inv = padding_top + plot_h - (row["total_invested_num"] / max_val * plot_h)
+        y_fv = padding_top + plot_h - (row["future_value_num"] / max_val * plot_h)
+        invested_points.append((x, y_inv))
+        future_points.append((x, y_fv))
+
+    inv_path_d = "M " + " L ".join(f"{x:.1f} {y:.1f}" for x, y in invested_points)
+    fv_path_d = "M " + " L ".join(f"{x:.1f} {y:.1f}" for x, y in future_points)
+
+    # Area fill under Future Value curve
+    first_x, last_x = future_points[0][0], future_points[-1][0]
+    base_y = padding_top + plot_h
+    fv_area_d = fv_path_d + f" L {last_x:.1f} {base_y:.1f} L {first_x:.1f} {base_y:.1f} Z"
+
+    # Color themes based on mode
+    color_fv = "#10b981" if mode == "sip" else "#38bdf8" if mode == "step_up" else "#f59e0b"
+    color_inv = "#64748b"
+
+    # Gridlines
+    grid_lines = []
+    for g in [0.25, 0.5, 0.75, 1.0]:
+        y_pos = padding_top + plot_h - (g * plot_h)
+        val_label = fmt_curr(g * max_val)
+        grid_lines.append(f'<line x1="{padding_left}" y1="{y_pos:.1f}" x2="{width - padding_right}" y2="{y_pos:.1f}" stroke="rgba(255,255,255,0.06)" stroke-dasharray="3,3" />')
+        grid_lines.append(f'<text x="{padding_left - 8}" y="{y_pos + 4:.1f}" fill="#64748b" font-size="10" text-anchor="end" font-family="JetBrains Mono, monospace">{val_label}</text>')
+
+    # Year ticks
+    year_ticks = []
+    for idx, row in enumerate(yearly_schedule):
+        if n > 12 and (idx + 1) % 2 != 0 and idx != n - 1:
+            continue
+        x_pos = padding_left + (idx / max(1, n - 1)) * plot_w
+        year_ticks.append(f'<text x="{x_pos:.1f}" y="{base_y + 18}" fill="#94a3b8" font-size="11" text-anchor="middle" font-family="Inter, sans-serif">Y{row["year"]}</text>')
+
+    return f"""<svg viewBox="0 0 {width} {height}" class="wealth-trajectory-svg" role="img" aria-label="Compounding Growth Trajectory Chart">
+      <defs>
+        <linearGradient id="gradFv_{mode}" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="{color_fv}" stop-opacity="0.35"/>
+          <stop offset="100%" stop-color="{color_fv}" stop-opacity="0.02"/>
+        </linearGradient>
+      </defs>
+      { "".join(grid_lines) }
+      <path d="{fv_area_d}" fill="url(#gradFv_{mode})" />
+      <path d="{inv_path_d}" fill="none" stroke="{color_inv}" stroke-width="2" stroke-dasharray="4,4" />
+      <path d="{fv_path_d}" fill="none" stroke="{color_fv}" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" />
+      { "".join(year_ticks) }
+      <circle cx="{future_points[-1][0]:.1f}" cy="{future_points[-1][1]:.1f}" r="5" fill="{color_fv}" stroke="#ffffff" stroke-width="2" />
+    </svg>"""
+
+
+# ============================================================================
+# 4. GOAL-BASED LUMP SUM PORTFOLIO ALLOCATOR
+# ============================================================================
 
 def generate_lump_sum_portfolio(
     capital_amount: float,
@@ -54,136 +360,60 @@ def generate_lump_sum_portfolio(
     horizon = max(0.5, float(horizon_years))
     risk = risk_profile.lower().strip()
 
-    # Determine Asset Class Weight Matrix based on Horizon & Risk
     if horizon < 1.0:
-        # Ultra Short Term (Under 1 Year) - Capital Preservation is paramount
-        weights = {
-            "liquid_arbitrage": 60.0,
-            "gold_commodity": 20.0,
-            "large_cap_index": 20.0,
-            "flexi_cap": 0.0,
-            "mid_small_cap": 0.0,
-            "high_conviction_stocks": 0.0,
-        }
+        weights = {"liquid_arbitrage": 60.0, "gold_commodity": 20.0, "large_cap_index": 20.0, "flexi_cap": 0.0, "mid_small_cap": 0.0, "high_conviction_stocks": 0.0}
         expected_cagr = 8.5
         portfolio_max_dd = -6.0
         risk_label = "Ultra Low Risk / Capital Preservation"
     elif horizon < 3.0:
-        # Short-to-Medium Term (1 to 3 Years)
         if risk in ["conservative", "low"]:
-            weights = {
-                "liquid_arbitrage": 40.0,
-                "gold_commodity": 25.0,
-                "large_cap_index": 25.0,
-                "flexi_cap": 10.0,
-                "mid_small_cap": 0.0,
-                "high_conviction_stocks": 0.0,
-            }
+            weights = {"liquid_arbitrage": 40.0, "gold_commodity": 25.0, "large_cap_index": 25.0, "flexi_cap": 10.0, "mid_small_cap": 0.0, "high_conviction_stocks": 0.0}
             expected_cagr = 10.5
             portfolio_max_dd = -10.0
             risk_label = "Conservative (Low Risk)"
         elif risk in ["aggressive", "high"]:
-            weights = {
-                "liquid_arbitrage": 10.0,
-                "gold_commodity": 15.0,
-                "large_cap_index": 35.0,
-                "flexi_cap": 25.0,
-                "mid_small_cap": 15.0,
-                "high_conviction_stocks": 0.0,
-            }
+            weights = {"liquid_arbitrage": 10.0, "gold_commodity": 15.0, "large_cap_index": 35.0, "flexi_cap": 25.0, "mid_small_cap": 15.0, "high_conviction_stocks": 0.0}
             expected_cagr = 14.5
             portfolio_max_dd = -18.0
             risk_label = "Growth Focused (Moderately High Risk)"
-        else: # Moderate / Balanced
-            weights = {
-                "liquid_arbitrage": 25.0,
-                "gold_commodity": 20.0,
-                "large_cap_index": 35.0,
-                "flexi_cap": 20.0,
-                "mid_small_cap": 0.0,
-                "high_conviction_stocks": 0.0,
-            }
+        else:
+            weights = {"liquid_arbitrage": 25.0, "gold_commodity": 20.0, "large_cap_index": 35.0, "flexi_cap": 20.0, "mid_small_cap": 0.0, "high_conviction_stocks": 0.0}
             expected_cagr = 12.2
             portfolio_max_dd = -13.5
             risk_label = "Balanced (Moderate Risk)"
     elif horizon < 5.0:
-        # Medium-to-Long Term (3 to 5 Years)
         if risk in ["conservative", "low"]:
-            weights = {
-                "liquid_arbitrage": 20.0,
-                "gold_commodity": 20.0,
-                "large_cap_index": 40.0,
-                "flexi_cap": 20.0,
-                "mid_small_cap": 0.0,
-                "high_conviction_stocks": 0.0,
-            }
+            weights = {"liquid_arbitrage": 20.0, "gold_commodity": 20.0, "large_cap_index": 40.0, "flexi_cap": 20.0, "mid_small_cap": 0.0, "high_conviction_stocks": 0.0}
             expected_cagr = 12.0
             portfolio_max_dd = -14.0
             risk_label = "Conservative Wealth Builder"
         elif risk in ["aggressive", "high"]:
-            weights = {
-                "liquid_arbitrage": 5.0,
-                "gold_commodity": 10.0,
-                "large_cap_index": 25.0,
-                "flexi_cap": 30.0,
-                "mid_small_cap": 20.0,
-                "high_conviction_stocks": 10.0,
-            }
+            weights = {"liquid_arbitrage": 5.0, "gold_commodity": 10.0, "large_cap_index": 25.0, "flexi_cap": 30.0, "mid_small_cap": 20.0, "high_conviction_stocks": 10.0}
             expected_cagr = 16.8
             portfolio_max_dd = -22.0
             risk_label = "Aggressive Alpha Compounder"
-        else: # Moderate
-            weights = {
-                "liquid_arbitrage": 10.0,
-                "gold_commodity": 15.0,
-                "large_cap_index": 35.0,
-                "flexi_cap": 30.0,
-                "mid_small_cap": 10.0,
-                "high_conviction_stocks": 0.0,
-            }
+        else:
+            weights = {"liquid_arbitrage": 10.0, "gold_commodity": 15.0, "large_cap_index": 35.0, "flexi_cap": 30.0, "mid_small_cap": 10.0, "high_conviction_stocks": 0.0}
             expected_cagr = 14.5
             portfolio_max_dd = -17.5
             risk_label = "Balanced Compounding"
     else:
-        # Long-to-Ultra Long Term (5 to 10+ Years) - Time allows maximum compounding
         if risk in ["conservative", "low"]:
-            weights = {
-                "liquid_arbitrage": 10.0,
-                "gold_commodity": 15.0,
-                "large_cap_index": 45.0,
-                "flexi_cap": 30.0,
-                "mid_small_cap": 0.0,
-                "high_conviction_stocks": 0.0,
-            }
+            weights = {"liquid_arbitrage": 10.0, "gold_commodity": 15.0, "large_cap_index": 45.0, "flexi_cap": 30.0, "mid_small_cap": 0.0, "high_conviction_stocks": 0.0}
             expected_cagr = 13.5
             portfolio_max_dd = -16.0
             risk_label = "Disciplined Long-Term Core"
         elif risk in ["aggressive", "high"]:
-            weights = {
-                "liquid_arbitrage": 0.0,
-                "gold_commodity": 10.0,
-                "large_cap_index": 20.0,
-                "flexi_cap": 30.0,
-                "mid_small_cap": 25.0,
-                "high_conviction_stocks": 15.0,
-            }
+            weights = {"liquid_arbitrage": 0.0, "gold_commodity": 10.0, "large_cap_index": 20.0, "flexi_cap": 30.0, "mid_small_cap": 25.0, "high_conviction_stocks": 15.0}
             expected_cagr = 18.2
             portfolio_max_dd = -26.0
             risk_label = "High Growth / High Alpha Creation"
-        else: # Moderate
-            weights = {
-                "liquid_arbitrage": 5.0,
-                "gold_commodity": 10.0,
-                "large_cap_index": 35.0,
-                "flexi_cap": 35.0,
-                "mid_small_cap": 15.0,
-                "high_conviction_stocks": 0.0,
-            }
+        else:
+            weights = {"liquid_arbitrage": 5.0, "gold_commodity": 10.0, "large_cap_index": 35.0, "flexi_cap": 35.0, "mid_small_cap": 15.0, "high_conviction_stocks": 0.0}
             expected_cagr = 15.6
             portfolio_max_dd = -20.0
             risk_label = "Balanced Long-Term Compounder"
 
-    # Select specific best-in-class assets for each allocation bucket
     assets: list[dict[str, Any]] = []
 
     if weights["large_cap_index"] > 0:
@@ -333,7 +563,7 @@ def generate_lump_sum_portfolio(
 
 
 # ============================================================================
-# SMART SIP BASKET BUILDER
+# 5. SMART MULTI-FUND MONTHLY SIP BASKET BUILDER
 # ============================================================================
 
 def generate_sip_plan(
@@ -428,7 +658,7 @@ def generate_sip_plan(
                 "role": "Portfolio hedge against sudden macro shocks.",
             },
         ]
-    else: # Moderate / Balanced
+    else:
         cagr = 15.2
         risk_title = "Balanced Wealth Creator (Optimal Risk-Adjusted Returns)"
         basket = [
@@ -474,14 +704,10 @@ def generate_sip_plan(
             },
         ]
 
-    # Calculate Future Corpus using SIP Future Value Formula:
-    # FV = P * [((1 + r)^n - 1) / r] * (1 + r)
     r_monthly = (cagr / 100.0) / 12.0
     fv_expected = sip_monthly * (((1.0 + r_monthly) ** total_installments - 1.0) / r_monthly) * (1.0 + r_monthly)
-
     r_conservative = ((cagr - 3.0) / 100.0) / 12.0
     fv_conservative = sip_monthly * (((1.0 + r_conservative) ** total_installments - 1.0) / r_conservative) * (1.0 + r_conservative)
-
     r_optimistic = ((cagr + 3.5) / 100.0) / 12.0
     fv_optimistic = sip_monthly * (((1.0 + r_optimistic) ** total_installments - 1.0) / r_optimistic) * (1.0 + r_optimistic)
 

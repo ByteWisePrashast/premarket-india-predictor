@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Pre-Market India & Portfolio Intelligence Terminal</title>
-    <meta name="description" content="Quantitative Pre-Market Indian market gap predictor, risk limits, model drift monitoring, goal-based portfolio builder, and smart SIP architect.">
+    <meta name="description" content="Quantitative Pre-Market Indian market gap predictor, risk limits, model drift monitoring, goal-based portfolio builder, step-up SIP calculator, and smart wealth architect.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -27,7 +27,10 @@
             🔍 Multi-Asset Evaluator
           </button>
           <button type="button" class="nav-link-btn highlight-nav-gold" id="navBtnPlanner" onclick="switchMainView('planner')">
-            🎯 Goal Portfolio & SIP Builder
+            🎯 Goal Portfolio & SIP Basket
+          </button>
+          <button type="button" class="nav-link-btn highlight-nav-cyan" id="navBtnCalculators" onclick="switchMainView('calculators')">
+            🧮 SIP & Wealth Calculators
           </button>
           <button type="button" class="nav-link-btn" id="navBtnPaper" onclick="switchMainView('paper')">
             💼 Paper Portfolio ({{ paper_portfolio.open_trades_count }})
@@ -354,21 +357,21 @@
       </div>
 
       <!-- ====================================================================
-           VIEW 2: DEDICATED GOAL-BASED PORTFOLIO & SIP ARCHITECT
+           VIEW 2: DEDICATED GOAL-BASED PORTFOLIO & SIP BASKET ARCHITECT
            ==================================================================== -->
       <div class="main-page-section" id="viewPlanner">
         <section class="planner-standalone-panel">
           <div class="section-title-bar">
             <div>
-              <h2>🎯 Goal-Based Portfolio & Smart SIP Architect</h2>
+              <h2>🎯 Goal-Based Portfolio & Smart SIP Basket</h2>
               <p>Generate institutional asset allocations or optimized multi-fund monthly SIP baskets tailored to your capital and risk appetite.</p>
             </div>
             <div class="planner-toggle-strip">
               <button type="button" class="btn-planner-sub active" id="subBtnLumpSum" onclick="switchPlannerMode('lumpsum')">
-                💼 Lump-Sum Portfolio Builder
+                💼 Lump-Sum Portfolio Allocator
               </button>
               <button type="button" class="btn-planner-sub" id="subBtnSip" onclick="switchPlannerMode('sip')">
-                💰 Smart SIP Wealth Architect
+                💰 Multi-Fund SIP Basket
               </button>
             </div>
           </div>
@@ -589,7 +592,331 @@
       </div>
 
       <!-- ====================================================================
-           VIEW 3: MULTI-ASSET EVALUATOR & "CAN I BUY?" SEARCH
+           VIEW 3: WEALTH & SIP CALCULATOR SUITE (NEW DEDICATED VIEW)
+           ==================================================================== -->
+      <div class="main-page-section" id="viewCalculators">
+        <section class="planner-standalone-panel">
+          <div class="section-title-bar">
+            <div>
+              <h2>🧮 Wealth & Investment Calculator Suite</h2>
+              <p>Model the power of compounding with regular SIPs, annual step-up top-ups, and inflation-adjusted lump-sum investments.</p>
+            </div>
+            <div class="planner-toggle-strip">
+              <button type="button" class="btn-planner-sub active" id="calcTabBtnSip" onclick="switchCalcTab('sip')">
+                📈 Regular SIP
+              </button>
+              <button type="button" class="btn-planner-sub" id="calcTabBtnStepUp" onclick="switchCalcTab('stepup')">
+                🚀 Step-Up SIP (Top-Up)
+              </button>
+              <button type="button" class="btn-planner-sub" id="calcTabBtnLumpsum" onclick="switchCalcTab('lumpsum')">
+                💰 Lump-Sum Investment
+              </button>
+            </div>
+          </div>
+
+          <!-- 1. REGULAR SIP CALCULATOR -->
+          <div class="calc-sub-panel active" id="calcSubPanelSip">
+            <div class="calc-split-layout">
+              <div class="calc-inputs-card">
+                <h3>SIP Investment Parameters</h3>
+                
+                <div class="calc-field">
+                  <div class="calc-label-row">
+                    <label>Monthly Investment (₹)</label>
+                    <input type="number" id="calcSipMonthly" value="10000" min="500" step="500" class="calc-num-input" oninput="runSipCalc()">
+                  </div>
+                  <input type="range" id="calcSipMonthlySlider" min="1000" max="100000" step="1000" value="10000" class="calc-slider" oninput="syncInput('calcSipMonthly', this.value); runSipCalc();">
+                  <div class="p-quick-chips">
+                    <button type="button" onclick="setCalcValue('calcSipMonthly', 'calcSipMonthlySlider', 2500); runSipCalc();">₹2.5k</button>
+                    <button type="button" onclick="setCalcValue('calcSipMonthly', 'calcSipMonthlySlider', 5000); runSipCalc();">₹5k</button>
+                    <button type="button" onclick="setCalcValue('calcSipMonthly', 'calcSipMonthlySlider', 10000); runSipCalc();">₹10k</button>
+                    <button type="button" onclick="setCalcValue('calcSipMonthly', 'calcSipMonthlySlider', 25000); runSipCalc();">₹25k</button>
+                    <button type="button" onclick="setCalcValue('calcSipMonthly', 'calcSipMonthlySlider', 50000); runSipCalc();">₹50k</button>
+                  </div>
+                </div>
+
+                <div class="calc-field">
+                  <div class="calc-label-row">
+                    <label>Expected Return Rate (% p.a.)</label>
+                    <input type="number" id="calcSipRate" value="14.0" min="1" max="30" step="0.5" class="calc-num-input" oninput="runSipCalc()">
+                  </div>
+                  <input type="range" id="calcSipRateSlider" min="6" max="25" step="0.5" value="14" class="calc-slider" oninput="syncInput('calcSipRate', this.value); runSipCalc();">
+                  <div class="p-quick-chips">
+                    <button type="button" onclick="setCalcValue('calcSipRate', 'calcSipRateSlider', 12); runSipCalc();">12% (Nifty Index)</button>
+                    <button type="button" onclick="setCalcValue('calcSipRate', 'calcSipRateSlider', 14); runSipCalc();">14% (Flexi Cap)</button>
+                    <button type="button" onclick="setCalcValue('calcSipRate', 'calcSipRateSlider', 16); runSipCalc();">16% (Growth)</button>
+                    <button type="button" onclick="setCalcValue('calcSipRate', 'calcSipRateSlider', 18); runSipCalc();">18% (Small Cap Alpha)</button>
+                  </div>
+                </div>
+
+                <div class="calc-field">
+                  <div class="calc-label-row">
+                    <label>Time Period (Years)</label>
+                    <input type="number" id="calcSipYears" value="10" min="1" max="40" step="1" class="calc-num-input" oninput="runSipCalc()">
+                  </div>
+                  <input type="range" id="calcSipYearsSlider" min="1" max="30" step="1" value="10" class="calc-slider" oninput="syncInput('calcSipYears', this.value); runSipCalc();">
+                  <div class="p-quick-chips">
+                    <button type="button" onclick="setCalcValue('calcSipYears', 'calcSipYearsSlider', 3); runSipCalc();">3Y</button>
+                    <button type="button" onclick="setCalcValue('calcSipYears', 'calcSipYearsSlider', 5); runSipCalc();">5Y</button>
+                    <button type="button" onclick="setCalcValue('calcSipYears', 'calcSipYearsSlider', 10); runSipCalc();">10Y</button>
+                    <button type="button" onclick="setCalcValue('calcSipYears', 'calcSipYearsSlider', 15); runSipCalc();">15Y</button>
+                    <button type="button" onclick="setCalcValue('calcSipYears', 'calcSipYearsSlider', 20); runSipCalc();">20Y</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Results Card & Chart -->
+              <div class="calc-results-card">
+                <div class="calc-summary-strip">
+                  <div class="css-box">
+                    <span class="css-label">Invested Amount</span>
+                    <strong class="css-val" id="sipResInvested">{{ calc_sip.total_invested }}</strong>
+                  </div>
+                  <div class="css-box">
+                    <span class="css-label">Est. Wealth Gain</span>
+                    <strong class="css-val positive" id="sipResGain">+{{ calc_sip.wealth_gain }} ({{ calc_sip.gain_pct }})</strong>
+                  </div>
+                  <div class="css-box highlight-css-box">
+                    <span class="css-label">Total Future Corpus</span>
+                    <strong class="css-val highlight-value" id="sipResFv">{{ calc_sip.future_value }}</strong>
+                  </div>
+                </div>
+
+                <div class="calc-chart-box" id="sipChartContainer">
+                  {{ calc_sip.chart_svg|safe }}
+                </div>
+
+                <!-- Year-by-Year Growth Schedule Table -->
+                <div class="calc-schedule-box">
+                  <h4>Year-by-Year Compounding Schedule</h4>
+                  <div class="table-responsive" style="max-height: 220px; overflow-y: auto;">
+                    <table class="watchlist-table" id="sipScheduleTable">
+                      <thead>
+                        <tr>
+                          <th>Year</th>
+                          <th>Total Invested</th>
+                          <th>Wealth Gain</th>
+                          <th>Future Value</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {% for row in calc_sip.yearly_schedule %}
+                          <tr>
+                            <td><strong>Year {{ row.year }}</strong></td>
+                            <td class="font-mono">{{ row.total_invested }}</td>
+                            <td class="positive font-mono">+{{ row.wealth_gain }}</td>
+                            <td class="highlight-value font-mono"><strong>{{ row.future_value }}</strong></td>
+                          </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. STEP-UP SIP CALCULATOR -->
+          <div class="calc-sub-panel" id="calcSubPanelStepUp">
+            <div class="calc-split-layout">
+              <div class="calc-inputs-card">
+                <h3>Step-Up (Top-Up) Parameters</h3>
+                
+                <div class="calc-field">
+                  <div class="calc-label-row">
+                    <label>Initial Monthly SIP (₹)</label>
+                    <input type="number" id="stepUpMonthly" value="10000" min="500" step="500" class="calc-num-input" oninput="runStepUpCalc()">
+                  </div>
+                  <input type="range" id="stepUpMonthlySlider" min="1000" max="100000" step="1000" value="10000" class="calc-slider" oninput="syncInput('stepUpMonthly', this.value); runStepUpCalc();">
+                </div>
+
+                <div class="calc-field">
+                  <div class="calc-label-row">
+                    <label>Annual Step-Up (% Increase Every Year)</label>
+                    <input type="number" id="stepUpPct" value="10" min="0" max="50" step="1" class="calc-num-input" oninput="runStepUpCalc()">
+                  </div>
+                  <input type="range" id="stepUpPctSlider" min="0" max="30" step="1" value="10" class="calc-slider" oninput="syncInput('stepUpPct', this.value); runStepUpCalc();">
+                  <div class="p-quick-chips">
+                    <button type="button" onclick="setCalcValue('stepUpPct', 'stepUpPctSlider', 5); runStepUpCalc();">+5% / yr</button>
+                    <button type="button" onclick="setCalcValue('stepUpPct', 'stepUpPctSlider', 10); runStepUpCalc();">+10% / yr</button>
+                    <button type="button" onclick="setCalcValue('stepUpPct', 'stepUpPctSlider', 15); runStepUpCalc();">+15% / yr</button>
+                    <button type="button" onclick="setCalcValue('stepUpPct', 'stepUpPctSlider', 20); runStepUpCalc();">+20% / yr</button>
+                  </div>
+                </div>
+
+                <div class="calc-field">
+                  <div class="calc-label-row">
+                    <label>Expected Return Rate (% p.a.)</label>
+                    <input type="number" id="stepUpRate" value="14.0" min="1" max="30" step="0.5" class="calc-num-input" oninput="runStepUpCalc()">
+                  </div>
+                  <input type="range" id="stepUpRateSlider" min="6" max="25" step="0.5" value="14" class="calc-slider" oninput="syncInput('stepUpRate', this.value); runStepUpCalc();">
+                </div>
+
+                <div class="calc-field">
+                  <div class="calc-label-row">
+                    <label>Time Period (Years)</label>
+                    <input type="number" id="stepUpYears" value="10" min="1" max="40" step="1" class="calc-num-input" oninput="runStepUpCalc()">
+                  </div>
+                  <input type="range" id="stepUpYearsSlider" min="1" max="30" step="1" value="10" class="calc-slider" oninput="syncInput('stepUpYears', this.value); runStepUpCalc();">
+                </div>
+              </div>
+
+              <!-- Results Card & Chart -->
+              <div class="calc-results-card">
+                <!-- Comparison Callout Banner -->
+                <div class="stepup-comparison-banner" id="stepUpComparisonBanner">
+                  <strong>🚀 STEP-UP ACCELERATION:</strong>
+                  <span>By stepping up your SIP by {{ calc_step_up.annual_step_up_pct }} each year, you create <strong class="positive">{{ calc_step_up.comparison_vs_flat_sip.extra_corpus_created }} extra corpus</strong> ({{ calc_step_up.comparison_vs_flat_sip.multiplier }} multiplier vs a flat SIP)!</span>
+                </div>
+
+                <div class="calc-summary-strip">
+                  <div class="css-box">
+                    <span class="css-label">Total Step-Up Invested</span>
+                    <strong class="css-val" id="stepUpResInvested">{{ calc_step_up.total_invested }}</strong>
+                  </div>
+                  <div class="css-box">
+                    <span class="css-label">Accelerated Wealth Gain</span>
+                    <strong class="css-val positive" id="stepUpResGain">+{{ calc_step_up.wealth_gain }} ({{ calc_step_up.gain_pct }})</strong>
+                  </div>
+                  <div class="css-box highlight-css-box">
+                    <span class="css-label">Step-Up Maturity Corpus</span>
+                    <strong class="css-val highlight-value" id="stepUpResFv">{{ calc_step_up.future_value }}</strong>
+                  </div>
+                </div>
+
+                <div class="calc-chart-box" id="stepUpChartContainer">
+                  {{ calc_step_up.chart_svg|safe }}
+                </div>
+
+                <div class="calc-schedule-box">
+                  <h4>Step-Up Escalation Schedule</h4>
+                  <div class="table-responsive" style="max-height: 220px; overflow-y: auto;">
+                    <table class="watchlist-table" id="stepUpScheduleTable">
+                      <thead>
+                        <tr>
+                          <th>Year</th>
+                          <th>Monthly SIP That Year</th>
+                          <th>Cumulative Invested</th>
+                          <th>Future Value</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {% for row in calc_step_up.yearly_schedule %}
+                          <tr>
+                            <td><strong>Year {{ row.year }}</strong></td>
+                            <td class="font-mono">{{ row.monthly_sip_this_year }}</td>
+                            <td class="font-mono">{{ row.total_invested }}</td>
+                            <td class="highlight-value font-mono"><strong>{{ row.future_value }}</strong></td>
+                          </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. LUMP-SUM INVESTMENT CALCULATOR -->
+          <div class="calc-sub-panel" id="calcSubPanelLumpSum">
+            <div class="calc-split-layout">
+              <div class="calc-inputs-card">
+                <h3>One-Time Lump-Sum Parameters</h3>
+                
+                <div class="calc-field">
+                  <div class="calc-label-row">
+                    <label>Total One-Time Investment (₹)</label>
+                    <input type="number" id="calcLumpPrincipal" value="500000" min="5000" step="10000" class="calc-num-input" oninput="runLumpCalc()">
+                  </div>
+                  <input type="range" id="calcLumpPrincipalSlider" min="10000" max="5000000" step="50000" value="500000" class="calc-slider" oninput="syncInput('calcLumpPrincipal', this.value); runLumpCalc();">
+                  <div class="p-quick-chips">
+                    <button type="button" onclick="setCalcValue('calcLumpPrincipal', 'calcLumpPrincipalSlider', 100000); runLumpCalc();">₹1 Lakh</button>
+                    <button type="button" onclick="setCalcValue('calcLumpPrincipal', 'calcLumpPrincipalSlider', 500000); runLumpCalc();">₹5 Lakh</button>
+                    <button type="button" onclick="setCalcValue('calcLumpPrincipal', 'calcLumpPrincipalSlider', 1000000); runLumpCalc();">₹10 Lakh</button>
+                    <button type="button" onclick="setCalcValue('calcLumpPrincipal', 'calcLumpPrincipalSlider', 2500000); runLumpCalc();">₹25 Lakh</button>
+                  </div>
+                </div>
+
+                <div class="calc-field">
+                  <div class="calc-label-row">
+                    <label>Expected Annual Return (% p.a.)</label>
+                    <input type="number" id="calcLumpRate" value="14.0" min="1" max="30" step="0.5" class="calc-num-input" oninput="runLumpCalc()">
+                  </div>
+                  <input type="range" id="calcLumpRateSlider" min="6" max="25" step="0.5" value="14" class="calc-slider" oninput="syncInput('calcLumpRate', this.value); runLumpCalc();">
+                </div>
+
+                <div class="calc-field">
+                  <div class="calc-label-row">
+                    <label>Time Period (Years)</label>
+                    <input type="number" id="calcLumpYears" value="10" min="1" max="40" step="1" class="calc-num-input" oninput="runLumpCalc()">
+                  </div>
+                  <input type="range" id="calcLumpYearsSlider" min="1" max="30" step="1" value="10" class="calc-slider" oninput="syncInput('calcLumpYears', this.value); runLumpCalc();">
+                </div>
+
+                <div class="calc-field">
+                  <div class="calc-label-row">
+                    <label>Inflation Rate (% p.a.)</label>
+                    <input type="number" id="calcLumpInflation" value="6.0" min="0" max="15" step="0.5" class="calc-num-input" oninput="runLumpCalc()">
+                  </div>
+                  <input type="range" id="calcLumpInflationSlider" min="0" max="12" step="0.5" value="6" class="calc-slider" oninput="syncInput('calcLumpInflation', this.value); runLumpCalc();">
+                </div>
+              </div>
+
+              <!-- Results Card & Chart -->
+              <div class="calc-results-card">
+                <div class="calc-summary-strip">
+                  <div class="css-box">
+                    <span class="css-label">One-Time Principal</span>
+                    <strong class="css-val" id="lumpResInvested">{{ calc_lump_sum.total_invested }}</strong>
+                  </div>
+                  <div class="css-box">
+                    <span class="css-label">Estimated Wealth Gain</span>
+                    <strong class="css-val positive" id="lumpResGain">+{{ calc_lump_sum.wealth_gain_nominal }} ({{ calc_lump_sum.gain_pct }})</strong>
+                  </div>
+                  <div class="css-box highlight-css-box">
+                    <span class="css-label">Nominal Maturity Corpus</span>
+                    <strong class="css-val highlight-value" id="lumpResFv">{{ calc_lump_sum.future_value_nominal }}</strong>
+                    <span class="css-sub-note" id="lumpResRealFv">Inflation-adjusted: <strong>{{ calc_lump_sum.future_value_inflation_adjusted }}</strong></span>
+                  </div>
+                </div>
+
+                <div class="calc-chart-box" id="lumpChartContainer">
+                  {{ calc_lump_sum.chart_svg|safe }}
+                </div>
+
+                <div class="calc-schedule-box">
+                  <h4>Compounding & Inflation Impact Table</h4>
+                  <div class="table-responsive" style="max-height: 220px; overflow-y: auto;">
+                    <table class="watchlist-table" id="lumpScheduleTable">
+                      <thead>
+                        <tr>
+                          <th>Year</th>
+                          <th>Nominal Value</th>
+                          <th>Nominal Gain</th>
+                          <th>Inflation-Adjusted Purchasing Power</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {% for row in calc_lump_sum.yearly_schedule %}
+                          <tr>
+                            <td><strong>Year {{ row.year }}</strong></td>
+                            <td class="highlight-value font-mono"><strong>{{ row.future_value }}</strong></td>
+                            <td class="positive font-mono">+{{ row.wealth_gain }}</td>
+                            <td class="font-mono">{{ row.real_purchasing_power }}</td>
+                          </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- ====================================================================
+           VIEW 4: MULTI-ASSET EVALUATOR & "CAN I BUY?" SEARCH
            ==================================================================== -->
       <div class="main-page-section" id="viewEvaluator">
         <section class="search-section">
@@ -877,7 +1204,7 @@
       </div>
 
       <!-- ====================================================================
-           VIEW 4: SHADOW PAPER PORTFOLIO
+           VIEW 5: SHADOW PAPER PORTFOLIO
            ==================================================================== -->
       <div class="main-page-section" id="viewPaper">
         <section class="watchlists-section">
@@ -997,7 +1324,7 @@
       </div>
 
       <!-- ====================================================================
-           VIEW 5: CALIBRATION & MODEL DRIFT MONITOR
+           VIEW 6: CALIBRATION & MODEL DRIFT MONITOR
            ==================================================================== -->
       <div class="main-page-section" id="viewCalibration">
         <section class="watchlists-section">
@@ -1152,7 +1479,7 @@
       </div>
     </div>
 
-    <!-- Client-side script for master views, planner, tabs, and autocomplete -->
+    <!-- Client-side script for master views, calculators, planner, tabs, and autocomplete -->
     <script>
       function switchMainView(viewName) {
         document.querySelectorAll('.nav-link-btn').forEach(btn => btn.classList.remove('active'));
@@ -1167,6 +1494,9 @@
         } else if (viewName === 'planner') {
           document.getElementById('navBtnPlanner').classList.add('active');
           document.getElementById('viewPlanner').classList.add('active');
+        } else if (viewName === 'calculators') {
+          document.getElementById('navBtnCalculators').classList.add('active');
+          document.getElementById('viewCalculators').classList.add('active');
         } else if (viewName === 'paper') {
           document.getElementById('navBtnPaper').classList.add('active');
           document.getElementById('viewPaper').classList.add('active');
@@ -1207,12 +1537,161 @@
         }
       }
 
+      function switchCalcTab(tab) {
+        document.getElementById('calcTabBtnSip').classList.remove('active');
+        document.getElementById('calcTabBtnStepUp').classList.remove('active');
+        document.getElementById('calcTabBtnLumpsum').classList.remove('active');
+
+        document.getElementById('calcSubPanelSip').classList.remove('active');
+        document.getElementById('calcSubPanelStepUp').classList.remove('active');
+        document.getElementById('calcSubPanelLumpSum').classList.remove('active');
+
+        if (tab === 'sip') {
+          document.getElementById('calcTabBtnSip').classList.add('active');
+          document.getElementById('calcSubPanelSip').classList.add('active');
+        } else if (tab === 'stepup') {
+          document.getElementById('calcTabBtnStepUp').classList.add('active');
+          document.getElementById('calcSubPanelStepUp').classList.add('active');
+        } else {
+          document.getElementById('calcTabBtnLumpsum').classList.add('active');
+          document.getElementById('calcSubPanelLumpSum').classList.add('active');
+        }
+      }
+
+      function syncInput(inputId, val) {
+        document.getElementById(inputId).value = val;
+      }
+
+      function setCalcValue(inputId, sliderId, val) {
+        document.getElementById(inputId).value = val;
+        document.getElementById(sliderId).value = val;
+      }
+
       function setLumpCapital(amt) {
         document.getElementById('lumpCapitalInput').value = amt;
       }
 
       function setSipAmount(amt) {
         document.getElementById('sipMonthlyInput').value = amt;
+      }
+
+      // Reactive Calculators AJAX
+      let calcDebounce = null;
+
+      function runSipCalc() {
+        clearTimeout(calcDebounce);
+        calcDebounce = setTimeout(() => {
+          const payload = {
+            monthly_amount: parseFloat(document.getElementById('calcSipMonthly').value) || 10000,
+            return_pct: parseFloat(document.getElementById('calcSipRate').value) || 14,
+            horizon_years: parseFloat(document.getElementById('calcSipYears').value) || 10,
+          };
+
+          fetch('/api/calculator/sip', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (data.ok) {
+              document.getElementById('sipResInvested').innerText = data.total_invested;
+              document.getElementById('sipResGain').innerText = `+${data.wealth_gain} (${data.gain_pct})`;
+              document.getElementById('sipResFv').innerText = data.future_value;
+              document.getElementById('sipChartContainer').innerHTML = data.chart_svg;
+
+              const tbody = document.querySelector('#sipScheduleTable tbody');
+              tbody.innerHTML = data.yearly_schedule.map(r => `
+                <tr>
+                  <td><strong>Year ${r.year}</strong></td>
+                  <td class="font-mono">${r.total_invested}</td>
+                  <td class="positive font-mono">+${r.wealth_gain}</td>
+                  <td class="highlight-value font-mono"><strong>${r.future_value}</strong></td>
+                </tr>
+              `).join('');
+            }
+          });
+        }, 150);
+      }
+
+      function runStepUpCalc() {
+        clearTimeout(calcDebounce);
+        calcDebounce = setTimeout(() => {
+          const payload = {
+            initial_monthly: parseFloat(document.getElementById('stepUpMonthly').value) || 10000,
+            step_up_pct: parseFloat(document.getElementById('stepUpPct').value) || 10,
+            return_pct: parseFloat(document.getElementById('stepUpRate').value) || 14,
+            horizon_years: parseFloat(document.getElementById('stepUpYears').value) || 10,
+          };
+
+          fetch('/api/calculator/step-up-sip', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (data.ok) {
+              document.getElementById('stepUpResInvested').innerText = data.total_invested;
+              document.getElementById('stepUpResGain').innerText = `+${data.wealth_gain} (${data.gain_pct})`;
+              document.getElementById('stepUpResFv').innerText = data.future_value;
+              document.getElementById('stepUpChartContainer').innerHTML = data.chart_svg;
+
+              document.getElementById('stepUpComparisonBanner').innerHTML = `
+                <strong>🚀 STEP-UP ACCELERATION:</strong>
+                <span>By stepping up your SIP by ${data.annual_step_up_pct} each year, you create <strong class="positive">${data.comparison_vs_flat_sip.extra_corpus_created} extra corpus</strong> (${data.comparison_vs_flat_sip.multiplier} multiplier vs a flat SIP)!</span>
+              `;
+
+              const tbody = document.querySelector('#stepUpScheduleTable tbody');
+              tbody.innerHTML = data.yearly_schedule.map(r => `
+                <tr>
+                  <td><strong>Year ${r.year}</strong></td>
+                  <td class="font-mono">${r.monthly_sip_this_year}</td>
+                  <td class="font-mono">${r.total_invested}</td>
+                  <td class="highlight-value font-mono"><strong>${r.future_value}</strong></td>
+                </tr>
+              `).join('');
+            }
+          });
+        }, 150);
+      }
+
+      function runLumpCalc() {
+        clearTimeout(calcDebounce);
+        calcDebounce = setTimeout(() => {
+          const payload = {
+            principal: parseFloat(document.getElementById('calcLumpPrincipal').value) || 500000,
+            return_pct: parseFloat(document.getElementById('calcLumpRate').value) || 14,
+            horizon_years: parseFloat(document.getElementById('calcLumpYears').value) || 10,
+            inflation_pct: parseFloat(document.getElementById('calcLumpInflation').value) || 6,
+          };
+
+          fetch('/api/calculator/lumpsum', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (data.ok) {
+              document.getElementById('lumpResInvested').innerText = data.total_invested;
+              document.getElementById('lumpResGain').innerText = `+${data.wealth_gain_nominal} (${data.gain_pct})`;
+              document.getElementById('lumpResFv').innerText = data.future_value_nominal;
+              document.getElementById('lumpResRealFv').innerHTML = `Inflation-adjusted: <strong>${data.future_value_inflation_adjusted}</strong>`;
+              document.getElementById('lumpChartContainer').innerHTML = data.chart_svg;
+
+              const tbody = document.querySelector('#lumpScheduleTable tbody');
+              tbody.innerHTML = data.yearly_schedule.map(r => `
+                <tr>
+                  <td><strong>Year ${r.year}</strong></td>
+                  <td class="highlight-value font-mono"><strong>${r.future_value}</strong></td>
+                  <td class="positive font-mono">+${r.wealth_gain}</td>
+                  <td class="font-mono">${r.real_purchasing_power}</td>
+                </tr>
+              `).join('');
+            }
+          });
+        }, 150);
       }
 
       function generateCustomPortfolio(e) {
