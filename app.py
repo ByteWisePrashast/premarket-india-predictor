@@ -42,6 +42,7 @@ from portfolio_planner import (
     generate_sip_plan,
     get_daily_top_picks,
 )
+from portfolio_health_engine import audit_portfolio_system
 from premarket_predictor import DataPoint, MarketReport, build_report, clamp, signed_score
 from risk_engine import calculate_transaction_friction, check_portfolio_risk_guardrails, check_volatility_regime
 
@@ -200,10 +201,16 @@ def init_db() -> None:
                 net_pnl REAL,
                 pnl_pct REAL,
                 exit_reason TEXT,
+                is_conviction_bet INTEGER DEFAULT 0,
                 created_at TEXT NOT NULL
             )
             """
         )
+        try:
+            conn.execute("ALTER TABLE paper_trades ADD COLUMN is_conviction_bet INTEGER DEFAULT 0")
+        except Exception:
+            pass
+
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS signal_outcomes (
@@ -295,6 +302,7 @@ def save_prediction(symbol: str, source: str, prediction: dict[str, Any]) -> Non
 # ============================================================================
 
 def get_paper_portfolio_state() -> dict[str, Any]:
+    """Fetches the shadow paper portfolio, computing live mark-to-market unrealized P&L for open holdings."""
     init_db()
     with sqlite3.connect(DB_PATH) as conn:
         conn.row_factory = sqlite3.Row
@@ -331,6 +339,8 @@ def get_paper_portfolio_state() -> dict[str, Any]:
         total_unrealized_pnl += unrealized_gross
         total_open_value += (curr_price * qty)
 
+        is_conviction = bool(r["is_conviction_bet"]) if "is_conviction_bet" in r.keys() else False
+
         open_trades.append({
             "id": r["id"],
             "symbol": sym,
@@ -348,6 +358,7 @@ def get_paper_portfolio_state() -> dict[str, Any]:
             "unrealized_pnl": fmt_curr(unrealized_gross),
             "unrealized_pnl_raw": unrealized_gross,
             "unrealized_pct": fmt_pct(unrealized_pct),
+            "is_conviction_bet": is_conviction,
         })
 
     closed_trades: list[dict[str, Any]] = []
@@ -547,6 +558,19 @@ def set_paper_capital(capital_amount: float) -> dict[str, Any]:
     }
 
 
+def set_conviction_bet(symbol: str, is_conviction: bool) -> bool:
+    """Updates conviction bet status for an open holding symbol."""
+    init_db()
+    sym_clean = symbol.upper().strip()
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute(
+            "UPDATE paper_trades SET is_conviction_bet = ? WHERE (symbol = ? OR symbol = ?) AND status = 'OPEN'",
+            (1 if is_conviction else 0, sym_clean, f"{sym_clean}.NS")
+        )
+        conn.commit()
+    return True
+
+
 _CACHED_STOCKS_WATCHLIST: list[dict[str, Any]] = []
 _CACHED_STOCKS_TIME: float = 0.0
 STOCKS_CACHE_TTL: float = 120.0
@@ -743,6 +767,15 @@ def index() -> str:
     default_calc_step_up = calculate_step_up_sip(initial_monthly_amount=10000.0, annual_step_up_pct=10.0, annual_return_pct=14.0, horizon_years=10.0)
     default_calc_lump_sum = calculate_lump_sum_calculator(principal_amount=500000.0, annual_return_pct=14.0, horizon_years=10.0, inflation_rate_pct=6.0)
 
+    # Portfolio Health & Holistic Diagnostic X-Ray
+    portfolio_xray = audit_portfolio_system(
+        holdings=paper_portfolio["open_trades"],
+        cash_balance=paper_portfolio["cash_balance_raw"],
+        time_horizon="long",
+        risk_profile="moderate",
+        primary_goal="wealth_creation",
+    )
+
     with sqlite3.connect(DB_PATH) as conn:
         drift_summary = compute_live_drift(conn, window_days=60)
 
@@ -773,6 +806,7 @@ def index() -> str:
         mfs_watchlist=mfs_watchlist,
         daily_picks=daily_picks,
         paper_portfolio=paper_portfolio,
+        portfolio_xray=portfolio_xray,
         vix_regime=vix_regime,
         risk_guardrails=risk_guardrails,
         backtest_stats=backtest_stats,
@@ -946,6 +980,53 @@ def api_calculator_lumpsum() -> Any:
     inflation_pct = float(data.get("inflation_pct", 6.0))
     res = calculate_lump_sum_calculator(principal_amount=principal, annual_return_pct=return_pct, horizon_years=horizon_years, inflation_rate_pct=inflation_pct)
     return jsonify(res)
+
+
+@app.route("/api/portfolio/xray", methods=["GET", "POST"])
+def api_portfolio_xray() -> Any:
+    data = request.get_json(silent=True) or request.form or {}
+    horizon = str(request.args.get("horizon") or data.get("horizon") or "long").lower()
+    risk = str(request.args.get("risk") or data.get("risk") or "moderate").lower()
+    goal = str(request.args.get("goal") or data.get("goal") or "wealth_creation").lower()
+    
+    paper_portfolio = get_paper_portfolio_state()
+    xray = audit_portfolio_system(
+        holdings=paper_portfolio["open_trades"],
+        cash_balance=paper_portfolio["cash_balance_raw"],
+        time_horizon=horizon,
+        risk_profile=risk,
+        primary_goal=goal,
+    )
+    return jsonify(xray)
+
+
+@app.post("/api/portfolio/xray/custom")
+def api_portfolio_xray_custom() -> Any:
+    data = request.get_json(silent=True) or request.form or {}
+    custom_holdings = data.get("holdings") or []
+    cash = float(data.get("cash_balance") or 0.0)
+    horizon = str(data.get("horizon") or "long").lower()
+    risk = str(data.get("risk") or "moderate").lower()
+    goal = str(data.get("goal") or "wealth_creation").lower()
+    
+    xray = audit_portfolio_system(
+        holdings=custom_holdings,
+        cash_balance=cash,
+        time_horizon=horizon,
+        risk_profile=risk,
+        primary_goal=goal,
+    )
+    return jsonify(xray)
+
+
+@app.post("/api/portfolio/conviction-bet")
+def api_toggle_conviction_bet() -> Any:
+    data = request.get_json(silent=True) or request.form or {}
+    symbol = str(data.get("symbol", "")).strip()
+    is_conviction = bool(data.get("is_conviction_bet", True))
+    if symbol:
+        set_conviction_bet(symbol, is_conviction)
+    return jsonify({"ok": True, "symbol": symbol, "is_conviction_bet": is_conviction})
 
 
 if __name__ == "__main__":

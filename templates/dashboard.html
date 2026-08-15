@@ -47,6 +47,9 @@
           <button type="button" class="nav-link-btn" id="navBtnHoldings" onclick="switchMainView('holdings')">
             💼 My Equity Holdings ({{ paper_portfolio.open_trades_count }})
           </button>
+          <button type="button" class="nav-link-btn" id="navBtnXray" onclick="switchMainView('xray')">
+            🏥 Portfolio X-Ray
+          </button>
           <button type="button" class="nav-link-btn" id="navBtnCalculators" onclick="switchMainView('calculators')">
             🧮 Wealth Calculators
           </button>
@@ -1587,6 +1590,388 @@
         </section>
       </div>
 
+      <!-- ====================================================================
+           VIEW 8: QUANTITATIVE PORTFOLIO HEALTH & HOLISTIC DIAGNOSTIC (X-RAY)
+           ==================================================================== -->
+      <div class="main-page-section" id="viewXray">
+        <section class="planner-standalone-panel">
+          <!-- Section Title & Profile Customizer -->
+          <div class="section-title-bar">
+            <div>
+              <h2>🏥 Portfolio Health X-Ray & Systemic Diagnostic Engine</h2>
+              <p>Holistic 5-dimension risk audit evaluating concentration, active sector weights vs Nifty 500, Sharpe quality, goal alignment, and fee leakage.</p>
+            </div>
+            
+            <form id="xrayProfileForm" class="xray-profile-bar" onsubmit="runXrayAudit(event)">
+              <div class="xray-select-group">
+                <label for="xrayHorizon">Time Horizon:</label>
+                <select id="xrayHorizon" name="horizon" class="xray-select" onchange="runXrayAudit(event)">
+                  <option value="short" {% if portfolio_xray.user_profile.time_horizon == 'short' %}selected{% endif %}>&lt; 3 Years (Short)</option>
+                  <option value="medium" {% if portfolio_xray.user_profile.time_horizon == 'medium' %}selected{% endif %}>3 – 5 Years (Medium)</option>
+                  <option value="long" {% if portfolio_xray.user_profile.time_horizon == 'long' %}selected{% endif %}>5 – 10 Years (Long)</option>
+                  <option value="ultra_long" {% if portfolio_xray.user_profile.time_horizon == 'ultra_long' %}selected{% endif %}>10+ Years (Ultra-Long)</option>
+                </select>
+              </div>
+
+              <div class="xray-select-group">
+                <label for="xrayRisk">Risk Profile:</label>
+                <select id="xrayRisk" name="risk" class="xray-select" onchange="runXrayAudit(event)">
+                  <option value="conservative" {% if portfolio_xray.user_profile.risk_profile == 'Conservative' %}selected{% endif %}>Conservative</option>
+                  <option value="moderate" {% if portfolio_xray.user_profile.risk_profile == 'Moderate' %}selected{% endif %}>Moderate Balanced</option>
+                  <option value="aggressive" {% if portfolio_xray.user_profile.risk_profile == 'Aggressive' %}selected{% endif %}>Aggressive Growth</option>
+                </select>
+              </div>
+
+              <div class="xray-select-group">
+                <label for="xrayGoal">Primary Goal:</label>
+                <select id="xrayGoal" name="goal" class="xray-select" onchange="runXrayAudit(event)">
+                  <option value="capital_preservation">Capital Preservation</option>
+                  <option value="balanced_growth">Balanced Growth</option>
+                  <option value="wealth_creation" selected>Wealth Compounding</option>
+                  <option value="retirement">Retirement Corpus</option>
+                </select>
+              </div>
+
+              <button type="submit" class="btn btn-primary btn-sm">⚡ Re-Audit System</button>
+            </form>
+          </div>
+
+          <!-- HERO HEALTH SCORE CARD -->
+          <div class="xray-hero-card">
+            <div class="xray-hero-left">
+              <div class="xray-score-dial">
+                <div class="xray-dial-circle border-{{ portfolio_xray.health_badge }}">
+                  <span class="xray-score-num" id="xrayHealthScoreNum">{{ portfolio_xray.health_score }}</span>
+                  <span class="xray-score-max">/100</span>
+                </div>
+                <div class="xray-score-badge-wrap">
+                  <span class="score-badge score-badge-{{ portfolio_xray.health_badge }}" id="xrayHealthTierBadge">
+                    {{ portfolio_xray.health_tier }}
+                  </span>
+                </div>
+              </div>
+
+              <div class="xray-dimensions-list">
+                <div class="xray-dim-row">
+                  <span class="xray-dim-name">Diversification & Concentration (30%):</span>
+                  <div class="xray-dim-bar-wrap">
+                    <div class="xray-dim-bar" style="width: {{ portfolio_xray.score_dimensions.concentration.score }}%;"></div>
+                  </div>
+                  <strong class="font-mono">{{ portfolio_xray.score_dimensions.concentration.score }}%</strong>
+                </div>
+                <div class="xray-dim-row">
+                  <span class="xray-dim-name">Risk-Adjusted Quality & Beta (25%):</span>
+                  <div class="xray-dim-bar-wrap">
+                    <div class="xray-dim-bar" style="width: {{ portfolio_xray.score_dimensions.quality.score }}%;"></div>
+                  </div>
+                  <strong class="font-mono">{{ portfolio_xray.score_dimensions.quality.score }}%</strong>
+                </div>
+                <div class="xray-dim-row">
+                  <span class="xray-dim-name">Goal & Horizon Fit (25%):</span>
+                  <div class="xray-dim-bar-wrap">
+                    <div class="xray-dim-bar" style="width: {{ portfolio_xray.score_dimensions.goal_fit.score }}%;"></div>
+                  </div>
+                  <strong class="font-mono">{{ portfolio_xray.score_dimensions.goal_fit.score }}%</strong>
+                </div>
+                <div class="xray-dim-row">
+                  <span class="xray-dim-name">Expense Efficiency & Overlap (10%):</span>
+                  <div class="xray-dim-bar-wrap">
+                    <div class="xray-dim-bar" style="width: {{ portfolio_xray.score_dimensions.cost_efficiency.score }}%;"></div>
+                  </div>
+                  <strong class="font-mono">{{ portfolio_xray.score_dimensions.cost_efficiency.score }}%</strong>
+                </div>
+                <div class="xray-dim-row">
+                  <span class="xray-dim-name">Rebalancing Hygiene (10%):</span>
+                  <div class="xray-dim-bar-wrap">
+                    <div class="xray-dim-bar" style="width: {{ portfolio_xray.score_dimensions.rebalance_hygiene.score }}%;"></div>
+                  </div>
+                  <strong class="font-mono">{{ portfolio_xray.score_dimensions.rebalance_hygiene.score }}%</strong>
+                </div>
+              </div>
+            </div>
+
+            <div class="xray-hero-right">
+              <div class="xray-stat-tile">
+                <span class="xray-tile-lbl">Portfolio Beta vs Nifty</span>
+                <strong class="xray-tile-val font-mono" id="xrayBetaVal">{{ portfolio_xray.portfolio_summary.portfolio_beta }}x</strong>
+                <span class="xray-tile-sub">1.00x is Nifty 50 Baseline</span>
+              </div>
+              <div class="xray-stat-tile">
+                <span class="xray-tile-lbl">Sharpe Ratio (Rf=6.8%)</span>
+                <strong class="xray-tile-val positive font-mono" id="xraySharpeVal">{{ portfolio_xray.portfolio_summary.sharpe_ratio }}</strong>
+                <span class="xray-tile-sub">Risk-adjusted excess return</span>
+              </div>
+              <div class="xray-stat-tile">
+                <span class="xray-tile-lbl">COVID-19 Crash Stress Test</span>
+                <strong class="xray-tile-val negative font-mono" id="xrayCovidVal">{{ portfolio_xray.portfolio_summary.covid_crash_drawdown }}</strong>
+                <span class="xray-tile-sub">Projected max drawdown</span>
+              </div>
+              <div class="xray-stat-tile">
+                <span class="xray-tile-lbl">Annual Expense Drag</span>
+                <strong class="xray-tile-val font-mono" id="xrayErVal">{{ portfolio_xray.portfolio_summary.annual_er_drag }} / yr</strong>
+                <span class="xray-tile-sub">Weighted ER: {{ portfolio_xray.portfolio_summary.weighted_expense_ratio }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- TOP 3 ACTIONABLE PRIORITY INSIGHTS -->
+          <div class="xray-section-box" style="margin-top: 24px;">
+            <div class="xray-box-header">
+              <div class="xray-bh-title">
+                <span class="xray-icon">🎯</span>
+                <div>
+                  <h3>Top Actionable Diagnostic Findings (Ranked by Financial Impact)</h3>
+                  <span class="xray-sub">Empirically backed observations comparing your exact numbers against Nifty 500 benchmarks</span>
+                </div>
+              </div>
+              <span class="cat-pill">Ranked Priority</span>
+            </div>
+
+            <div class="xray-insights-grid" id="xrayTopInsightsContainer">
+              {% for ins in portfolio_xray.top_3_insights %}
+                <div class="xray-insight-card severity-{{ ins.severity }}">
+                  <div class="xic-top">
+                    <span class="xic-priority-tag">#{{ loop.index }} {{ ins.type }}</span>
+                    <span class="xic-cat-tag {% if ins.category == 'facts' %}tag-fact{% else %}tag-opinion{% endif %}">
+                      {{ '🟢 Deterministic Fact' if ins.category == 'facts' else '🟡 Model Assessment' }}
+                    </span>
+                  </div>
+                  <h4 class="xic-headline">{{ ins.headline }}</h4>
+                  <p class="xic-fact"><strong>Verified Data:</strong> {{ ins.fact }}</p>
+                  <p class="xic-rec"><strong>System Fix:</strong> {{ ins.recommendation }}</p>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <!-- DUAL-PANE DEEP DIVE: FACTS TIER VS MODEL ASSESSMENT TIER -->
+          <div class="xray-split-grid" style="margin-top: 24px;">
+            <!-- PANE 1: DETERMINISTIC FACTS (MATH & BENCHMARK AUDIT) -->
+            <div class="xray-pane-box">
+              <div class="xray-box-header">
+                <div class="xray-bh-title">
+                  <span class="xray-icon">📐</span>
+                  <div>
+                    <h3>Deterministic Facts: Sector Exposure vs Nifty 500 Benchmark</h3>
+                    <span class="xray-sub">Objective mathematical comparison of sector weights against the Indian economy</span>
+                  </div>
+                </div>
+                <span class="tag-fact">🟢 Pure Math</span>
+              </div>
+
+              <div class="table-responsive" style="margin-top: 14px;">
+                <table class="watchlist-table">
+                  <thead>
+                    <tr>
+                      <th>Sector</th>
+                      <th>Your Portfolio</th>
+                      <th>Nifty 500</th>
+                      <th>Active Deviation</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for sc in portfolio_xray.sector_comparisons %}
+                      <tr>
+                        <td><strong>{{ sc.sector }}</strong></td>
+                        <td class="font-mono"><strong>{{ sc.portfolio_wt }}</strong></td>
+                        <td class="font-mono" style="color: var(--text-dim);">{{ sc.benchmark_wt }}</td>
+                        <td class="font-mono {{ 'negative' if sc.status == 'overweight' else 'positive' if sc.status == 'underweight' else '' }}">
+                          <strong>{{ sc.active_diff }}</strong>
+                        </td>
+                        <td>
+                          {% if sc.status == 'overweight' %}
+                            <span class="score-badge score-badge-low">⚠️ Overweight</span>
+                          {% elif sc.status == 'underweight' %}
+                            <span class="score-badge score-badge-neutral">Underweight</span>
+                          {% else %}
+                            <span class="score-badge score-badge-high">Balanced</span>
+                          {% endif %}
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- PANE 2: MARKET CAP & FUND OVERLAP MATRIX -->
+            <div class="xray-pane-box">
+              <div class="xray-box-header">
+                <div class="xray-bh-title">
+                  <span class="xray-icon">🔍</span>
+                  <div>
+                    <h3>Market Cap Distribution & Fund Overlap Matrix</h3>
+                    <span class="xray-sub">Analyzes size-tier volatility risks and duplicate AMC fee leakages</span>
+                  </div>
+                </div>
+                <span class="tag-fact">🟢 Verified</span>
+              </div>
+
+              <div class="cap-distribution-strip" style="margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap;">
+                {% for c in portfolio_xray.cap_breakdown %}
+                  <div class="cap-badge-chip">
+                    <span class="cbc-name">{{ c.cap }}:</span>
+                    <strong class="cbc-val font-mono">{{ c.pct }}</strong>
+                  </div>
+                {% endfor %}
+              </div>
+
+              {% if portfolio_xray.overlap_pairs %}
+                <div class="overlap-table-wrap" style="margin-top: 16px;">
+                  <h4 style="font-size: 13px; margin-bottom: 8px; color: var(--accent);">⚠️ Detected Fund Overlaps (&ge;40% Shared Holdings):</h4>
+                  <table class="watchlist-table">
+                    <thead>
+                      <tr>
+                        <th>Fund Pair</th>
+                        <th>Overlap %</th>
+                        <th>Top Shared Stocks</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for op in portfolio_xray.overlap_pairs %}
+                        <tr>
+                          <td><strong>{{ op.fund_1 }}</strong> <br><span style="color: var(--text-dim);">vs {{ op.fund_2 }}</span></td>
+                          <td class="font-mono negative"><strong>{{ op.overlap_pct }}</strong></td>
+                          <td class="font-mono" style="font-size: 11px;">{{ op.shared_stocks|join(', ') }}</td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              {% else %}
+                <div class="no-overlap-card" style="margin-top: 16px; padding: 18px; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: var(--radius-md);">
+                  <span style="font-size: 18px;">✅</span> <strong>Clean Fund Diversification:</strong> No duplicate fund overlaps or excessive AMC fee redundancies detected among your funds.
+                </div>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- COUNTERFACTUAL "WHAT-IF" REBALANCING SIMULATOR -->
+          <div class="xray-section-box" style="margin-top: 24px;">
+            <div class="xray-box-header">
+              <div class="xray-bh-title">
+                <span class="xray-icon">🧪</span>
+                <div>
+                  <h3>2-Year Counterfactual "What-If" Rebalancing Simulator</h3>
+                  <span class="xray-sub">Simulates 24-month historical backtested performance: Current Mix vs Optimized Rebalanced Mix</span>
+                </div>
+              </div>
+              <span class="cat-pill">Historical Walk-Forward</span>
+            </div>
+
+            <div class="counterfactual-grid">
+              <div class="counterfactual-chart-wrap">
+                <div class="c-chart-header">
+                  <h4>24-Month Wealth Growth Trajectory</h4>
+                  <div class="c-chart-legend">
+                    <span class="c-leg-curr">--- Current Portfolio</span>
+                    <span class="c-leg-reb">— Optimized Rebalanced Mix</span>
+                  </div>
+                </div>
+                <div id="xrayChartContainer">
+                  {{ portfolio_xray.counterfactual_stats.chart_svg|safe }}
+                </div>
+              </div>
+
+              <div class="counterfactual-metrics-sidebar">
+                <h4>Projected Performance Uplift</h4>
+                
+                <div class="c-metric-row">
+                  <span>Annualized Return (CAGR):</span>
+                  <div class="c-diff-box">
+                    <span class="font-mono">{{ portfolio_xray.counterfactual_stats.current_cagr }}</span> ➔ 
+                    <strong class="font-mono positive">{{ portfolio_xray.counterfactual_stats.rebalanced_cagr }}</strong>
+                    <span class="c-badge-gain">({{ portfolio_xray.counterfactual_stats.cagr_improvement }})</span>
+                  </div>
+                </div>
+
+                <div class="c-metric-row">
+                  <span>Crash Risk (Max Drawdown):</span>
+                  <div class="c-diff-box">
+                    <span class="font-mono negative">{{ portfolio_xray.counterfactual_stats.current_drawdown }}</span> ➔ 
+                    <strong class="font-mono positive">{{ portfolio_xray.counterfactual_stats.rebalanced_drawdown }}</strong>
+                    <span class="c-badge-gain">({{ portfolio_xray.counterfactual_stats.drawdown_reduction }})</span>
+                  </div>
+                </div>
+
+                <div class="c-metric-row">
+                  <span>2-Year Extra Wealth Generated:</span>
+                  <div class="c-diff-box">
+                    <strong class="font-mono positive highlight-value" style="font-size: 16px;">+{{ portfolio_xray.counterfactual_stats.two_year_gain_diff }}</strong>
+                  </div>
+                </div>
+
+                <div class="c-metric-row">
+                  <span>Annual Fee Drag Eliminated:</span>
+                  <div class="c-diff-box">
+                    <strong class="font-mono positive">{{ portfolio_xray.counterfactual_stats.annual_cost_savings }} / yr</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- REBALANCE ACTION BLUEPRINT TABLE -->
+          <div class="xray-section-box" style="margin-top: 24px;">
+            <div class="xray-box-header">
+              <div class="xray-bh-title">
+                <span class="xray-icon">📋</span>
+                <div>
+                  <h3>One-Click Rebalancing Blueprint</h3>
+                  <span class="xray-sub">Actionable roadmap to optimize concentration, eliminate drag, and align with your goal horizon</span>
+                </div>
+              </div>
+              <span class="cat-pill">Target Allocation</span>
+            </div>
+
+            <div class="table-responsive" style="margin-top: 14px;">
+              <table class="watchlist-table">
+                <thead>
+                  <tr>
+                    <th>Asset Name</th>
+                    <th>Type</th>
+                    <th>Sector</th>
+                    <th>Current %</th>
+                    <th>Target %</th>
+                    <th>Recommended Action</th>
+                    <th>Quantitative Rationale</th>
+                    <th>Conviction Bet</th>
+                  </tr>
+                </thead>
+                <tbody id="xrayBlueprintTbody">
+                  {% for b in portfolio_xray.rebalance_blueprint %}
+                    <tr>
+                      <td><strong>{{ b.name }}</strong> ({{ b.symbol }})</td>
+                      <td><span class="cat-pill">{{ b.asset_type }}</span></td>
+                      <td style="font-size: 12px; color: var(--text-dim);">{{ b.sector }}</td>
+                      <td class="font-mono"><strong>{{ b.current_wt }}</strong></td>
+                      <td class="font-mono positive"><strong>{{ b.target_wt }}</strong></td>
+                      <td><span class="action-tag {{ b.action_class }}">{{ b.action }}</span></td>
+                      <td style="font-size: 12.5px; line-height: 1.4; color: var(--text-muted);">{{ b.rationale }}</td>
+                      <td>
+                        <button type="button" class="btn btn-conviction-bet btn-sm {% if b.is_conviction_bet %}active{% endif %}" onclick="toggleConvictionBet('{{ b.symbol }}', {{ 'false' if b.is_conviction_bet else 'true' }})">
+                          {{ '⭐ Conviction Bet' if b.is_conviction_bet else '+ Mark Conviction' }}
+                        </button>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- QUANTITATIVE DIAGNOSTIC DISCLAIMER -->
+          <div class="xray-disclaimer-card" style="margin-top: 24px;">
+            <span class="xd-icon">⚠️</span>
+            <div class="xd-text">
+              <strong>Quantitative Diagnostic & Simulation Notice:</strong>
+              <p>This diagnostic engine applies mathematical portfolio theory (Sharpe, Sortino, Nifty 500 active weights, and historical walk-forward backtests). It is designed for research, risk modeling, and paper simulation. It does not constitute personalized financial advisory. Always consult a SEBI-registered advisor before executing rebalancing in real money accounts.</p>
+            </div>
+          </div>
+        </section>
+      </div>
+
       <!-- Footer -->
       <footer class="main-footer">
         <p>Quantitative Pre-Market Model, Risk Engine, Multi-Asset Allocator & Holdings Terminal. Human-in-the-loop sanity check recommended. Not financial advice.</p>
@@ -1659,6 +2044,9 @@
         } else if (viewName === 'holdings') {
           document.getElementById('navBtnHoldings').classList.add('active');
           document.getElementById('viewHoldings').classList.add('active');
+        } else if (viewName === 'xray') {
+          document.getElementById('navBtnXray').classList.add('active');
+          document.getElementById('viewXray').classList.add('active');
         } else if (viewName === 'calculators') {
           document.getElementById('navBtnCalculators').classList.add('active');
           document.getElementById('viewCalculators').classList.add('active');
@@ -2077,6 +2465,84 @@
           window.location.reload();
         })
         .catch(err => alert(`Flatten error: ${err}`));
+      }
+
+      function runXrayAudit(event) {
+        if (event) event.preventDefault();
+        const horizon = document.getElementById('xrayHorizon').value;
+        const risk = document.getElementById('xrayRisk').value;
+        const goal = document.getElementById('xrayGoal').value;
+
+        fetch(`/api/portfolio/xray?horizon=${horizon}&risk=${risk}&goal=${goal}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data && data.ok) {
+              document.getElementById('xrayHealthScoreNum').textContent = data.health_score;
+              const badge = document.getElementById('xrayHealthTierBadge');
+              badge.textContent = data.health_tier;
+              badge.className = `score-badge score-badge-${data.health_badge}`;
+              
+              document.getElementById('xrayBetaVal').textContent = `${data.portfolio_summary.portfolio_beta}x`;
+              document.getElementById('xraySharpeVal').textContent = data.portfolio_summary.sharpe_ratio;
+              document.getElementById('xrayCovidVal').textContent = data.portfolio_summary.covid_crash_drawdown;
+              document.getElementById('xrayErVal').textContent = `${data.portfolio_summary.annual_er_drag} / yr`;
+
+              if (data.counterfactual_stats && data.counterfactual_stats.chart_svg) {
+                document.getElementById('xrayChartContainer').innerHTML = data.counterfactual_stats.chart_svg;
+              }
+
+              const insightsContainer = document.getElementById('xrayTopInsightsContainer');
+              if (insightsContainer && data.top_3_insights) {
+                insightsContainer.innerHTML = data.top_3_insights.map((ins, idx) => `
+                  <div class="xray-insight-card severity-${ins.severity}">
+                    <div class="xic-top">
+                      <span class="xic-priority-tag">#${idx + 1} ${ins.type}</span>
+                      <span class="xic-cat-tag ${ins.category === 'facts' ? 'tag-fact' : 'tag-opinion'}">
+                        ${ins.category === 'facts' ? '🟢 Deterministic Fact' : '🟡 Model Assessment'}
+                      </span>
+                    </div>
+                    <h4 class="xic-headline">${ins.headline}</h4>
+                    <p class="xic-fact"><strong>Verified Data:</strong> ${ins.fact}</p>
+                    <p class="xic-rec"><strong>System Fix:</strong> ${ins.recommendation}</p>
+                  </div>
+                `).join('');
+              }
+
+              const blueprintTbody = document.getElementById('xrayBlueprintTbody');
+              if (blueprintTbody && data.rebalance_blueprint) {
+                blueprintTbody.innerHTML = data.rebalance_blueprint.map(b => `
+                  <tr>
+                    <td><strong>${b.name}</strong> (${b.symbol})</td>
+                    <td><span class="cat-pill">${b.asset_type}</span></td>
+                    <td style="font-size: 12px; color: var(--text-dim);">${b.sector}</td>
+                    <td class="font-mono"><strong>${b.current_wt}</strong></td>
+                    <td class="font-mono positive"><strong>${b.target_wt}</strong></td>
+                    <td><span class="action-tag ${b.action_class}">${b.action}</span></td>
+                    <td style="font-size: 12.5px; line-height: 1.4; color: var(--text-muted);">${b.rationale}</td>
+                    <td>
+                      <button type="button" class="btn btn-conviction-bet btn-sm ${b.is_conviction_bet ? 'active' : ''}" onclick="toggleConvictionBet('${b.symbol}', ${b.is_conviction_bet ? 'false' : 'true'})">
+                        ${b.is_conviction_bet ? '⭐ Conviction Bet' : '+ Mark Conviction'}
+                      </button>
+                    </td>
+                  </tr>
+                `).join('');
+              }
+            }
+          })
+          .catch(err => console.error("X-Ray audit error:", err));
+      }
+
+      function toggleConvictionBet(symbol, isConviction) {
+        fetch('/api/portfolio/conviction-bet', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ symbol: symbol, is_conviction_bet: isConviction })
+        })
+        .then(res => res.json())
+        .then(data => {
+          runXrayAudit(null);
+        })
+        .catch(err => console.error("Conviction bet toggle error:", err));
       }
 
       function toggleTheme() {
