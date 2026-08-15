@@ -1,0 +1,1436 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Pre-Market India & Portfolio Intelligence Terminal</title>
+    <meta name="description" content="Quantitative Pre-Market Indian market gap predictor, risk limits, model drift monitoring, goal-based portfolio builder, and smart SIP architect.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+  </head>
+  <body>
+    <!-- Top Navigation Header with Dedicated App Pages -->
+    <header class="master-navbar">
+      <div class="nav-shell">
+        <div class="nav-brand">
+          <span class="nav-pulse"></span>
+          <strong>INDIA PRE-MARKET <span class="gradient-text">& PORTFOLIO AI</span></strong>
+        </div>
+
+        <nav class="nav-links">
+          <button type="button" class="nav-link-btn active" id="navBtnMarket" onclick="switchMainView('market')">
+            📊 Market & Gap Cues
+          </button>
+          <button type="button" class="nav-link-btn" id="navBtnEvaluator" onclick="switchMainView('evaluator')">
+            🔍 Multi-Asset Evaluator
+          </button>
+          <button type="button" class="nav-link-btn highlight-nav-gold" id="navBtnPlanner" onclick="switchMainView('planner')">
+            🎯 Goal Portfolio & SIP Builder
+          </button>
+          <button type="button" class="nav-link-btn" id="navBtnPaper" onclick="switchMainView('paper')">
+            💼 Paper Portfolio ({{ paper_portfolio.open_trades_count }})
+          </button>
+          <button type="button" class="nav-link-btn" id="navBtnDrift" onclick="switchMainView('calibration')">
+            🧪 Calibration & Drift
+          </button>
+        </nav>
+
+        <div class="nav-actions">
+          <div class="portfolio-chip">
+            <span class="p-chip-label">Equity:</span>
+            <strong class="p-chip-val">{{ paper_portfolio.total_equity }}</strong>
+            <span class="p-chip-gain {{ 'positive' if '+' in paper_portfolio.total_gain_pct else 'negative' }}">({{ paper_portfolio.total_gain_pct }})</span>
+          </div>
+          <form method="get" action="/">
+            <button type="submit" class="btn btn-refresh" id="refreshBtn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+              Refresh
+            </button>
+          </form>
+        </div>
+      </div>
+    </header>
+
+    <main class="shell">
+      <!-- MODEL DRIFT ALERT BANNER (If Active) -->
+      {% if drift_summary and drift_summary.has_drift_alert %}
+        <section class="drift-alert-banner">
+          <div class="da-icon">⚠️</div>
+          <div class="da-body">
+            <strong>MODEL DRIFT ALERT DETECTED</strong>
+            <p>{{ drift_summary.summary_message }} Some confidence scores have temporarily degraded.</p>
+          </div>
+        </section>
+      {% endif %}
+
+      <!-- VOLATILITY KILL SWITCH BANNER (If Active) -->
+      {% if vix_regime.kill_switch_active %}
+        <section class="kill-switch-banner">
+          <div class="ks-icon">🚨</div>
+          <div class="ks-body">
+            <strong>VOLATILITY CIRCUIT BREAKER ACTIVE (India VIX: {{ vix_regime.vix_value }}, 1D: {{ vix_regime.vix_1d_change_pct }})</strong>
+            <p>{{ vix_regime.advice }} All fresh BUY recommendations are overridden to Capital Preservation.</p>
+          </div>
+        </section>
+      {% elif vix_regime.badge == "elevated" %}
+        <section class="elevated-vix-banner">
+          <div class="ev-icon">⚡</div>
+          <div class="ev-body">
+            <strong>ELEVATED VOLATILITY REGIME (India VIX: {{ vix_regime.vix_value }})</strong>
+            <p>{{ vix_regime.advice }}</p>
+          </div>
+        </section>
+      {% endif %}
+
+      <!-- ====================================================================
+           VIEW 1: MARKET CUES & OPENING GAP PREDICTOR
+           ==================================================================== -->
+      <div class="main-page-section active" id="viewMarket">
+        <!-- Pre-Market Opening Gap Prediction Strip -->
+        <section class="prediction-strip" aria-label="Nifty 50 Opening Gap Probabilities">
+          <div class="prob-card prob-up">
+            <div class="prob-header">
+              <span class="prob-title">Gap Up Probability</span>
+              <span class="prob-badge">Bullish</span>
+            </div>
+            <div class="prob-body">
+              <strong class="prob-num">{{ "%.1f"|format(report.prediction["GAP UP"]) }}%</strong>
+              <div class="prob-meter">
+                <div class="prob-meter-fill fill-up" style="width: {{ report.prediction['GAP UP'] }}%"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="prob-card prob-down">
+            <div class="prob-header">
+              <span class="prob-title">Gap Down Probability</span>
+              <span class="prob-badge">Bearish</span>
+            </div>
+            <div class="prob-body">
+              <strong class="prob-num">{{ "%.1f"|format(report.prediction["GAP DOWN"]) }}%</strong>
+              <div class="prob-meter">
+                <div class="prob-meter-fill fill-down" style="width: {{ report.prediction['GAP DOWN'] }}%"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="prob-card prob-flat">
+            <div class="prob-header">
+              <span class="prob-title">Flat / Rangebound</span>
+              <span class="prob-badge">Neutral</span>
+            </div>
+            <div class="prob-body">
+              <strong class="prob-num">{{ "%.1f"|format(report.prediction["FLAT"]) }}%</strong>
+              <div class="prob-meter">
+                <div class="prob-meter-fill fill-flat" style="width: {{ report.prediction['FLAT'] }}%"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Macro Context Summary Banner -->
+        <section class="summary-banner">
+          <div class="summary-icon">💡</div>
+          <div class="summary-text">{{ report.context_summary }}</div>
+        </section>
+
+        <!-- INSTITUTIONAL & MACRO DRIVERS 6-COLUMN GRID -->
+        <section class="macro-columns">
+          <article class="panel">
+            <h2>GIFT Nifty Cues</h2>
+            {% for label, point in report.gift_rows %}
+              <div class="data-row">
+                <span>{{ label }}</span>
+                <strong class="{{ 'ok' if point.ok else 'missing' }}">{{ point.display }}</strong>
+              </div>
+            {% endfor %}
+          </article>
+
+          <article class="panel">
+            <h2>Global Markets</h2>
+            {% for label, point in report.global_rows %}
+              <div class="data-row">
+                <span>{{ label }}</span>
+                <strong class="{{ 'positive' if point.value and point.value > 0 else 'negative' if point.value and point.value < 0 else 'missing' }}">{{ point.display }}</strong>
+              </div>
+            {% endfor %}
+          </article>
+
+          <article class="panel">
+            <h2>Macro & Volatility</h2>
+            {% for label, point in report.macro_rows %}
+              <div class="data-row">
+                <span>{{ label }}</span>
+                <strong class="{{ 'ok' if point.ok else 'missing' }}">{{ point.display }}</strong>
+              </div>
+            {% endfor %}
+          </article>
+
+          <article class="panel">
+            <h2>FII / DII Flows</h2>
+            {% for label, point in report.institutional_rows %}
+              <div class="data-row">
+                <span>{{ label }}</span>
+                <strong class="{{ 'positive' if point.value and point.value > 0 else 'negative' if point.value and point.value < 0 else 'missing' }}">{{ point.display }}</strong>
+              </div>
+            {% endfor %}
+          </article>
+
+          <article class="panel">
+            <h2>News Sentiment</h2>
+            <div class="sentiment-box {{ report.sentiment_label|lower }}">
+              <strong>{{ report.sentiment_label }}</strong>
+              <span>Score: {{ report.sentiment_score }}</span>
+            </div>
+            {% if report.headlines %}
+              <ul class="headlines-list">
+                {% for headline in report.headlines[:3] %}
+                  <li>{{ headline }}</li>
+                {% endfor %}
+              </ul>
+            {% endif %}
+          </article>
+
+          <article class="panel">
+            <h2>Signal Weights</h2>
+            {% for label, score in report.component_scores.items() %}
+              <div class="data-row">
+                <span>{{ label }}</span>
+                <strong class="{{ 'positive' if score|float > 0 else 'negative' if score|float < 0 else 'flat' }}">{{ score }}</strong>
+              </div>
+            {% endfor %}
+          </article>
+        </section>
+
+        <!-- Quick Watchlists Section inside Market View -->
+        <section class="watchlists-section">
+          <div class="watchlists-header">
+            <h2>Active Watchlists (Intraday & Swing Candidates)</h2>
+            <div class="tab-controls" role="tablist">
+              <button type="button" class="tab-btn active" id="tabBtnStocks" onclick="switchWatchlistTab('stocks')">📈 Stocks</button>
+              <button type="button" class="tab-btn" id="tabBtnEtfs" onclick="switchWatchlistTab('etfs')">🪙 ETFs</button>
+              <button type="button" class="tab-btn" id="tabBtnMfs" onclick="switchWatchlistTab('mfs')">🏦 Mutual Funds</button>
+            </div>
+          </div>
+
+          <!-- STOCKS WATCHLIST TAB CONTENT -->
+          <div class="tab-content active" id="tabContentStocks">
+            {% if stocks_watchlist %}
+              <div class="table-responsive">
+                <table class="watchlist-table">
+                  <thead>
+                    <tr>
+                      <th>Stock</th>
+                      <th>Last Price</th>
+                      <th>1D Change</th>
+                      <th>5D Change</th>
+                      <th>Target Zone</th>
+                      <th>Stop Loss</th>
+                      <th>Verdict Score</th>
+                      <th>Action</th>
+                      <th>Paper Trade</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for s in stocks_watchlist %}
+                      <tr>
+                        <td>
+                          <a href="/?symbol={{ s.symbol }}" class="asset-link">
+                            <strong>{{ s.symbol }}</strong>
+                          </a>
+                        </td>
+                        <td>{{ s.last }}</td>
+                        <td class="{{ 'positive' if '+' in s.change_1d else 'negative' }}">{{ s.change_1d }}</td>
+                        <td class="{{ 'positive' if '+' in s.change_5d else 'negative' }}">{{ s.change_5d }}</td>
+                        <td class="positive">{{ s.target }}</td>
+                        <td class="negative">{{ s.stop_loss }}</td>
+                        <td>
+                          <span class="score-pill score-{{ s.badge }}">{{ s.score }}</span>
+                        </td>
+                        <td>
+                          <span class="action-tag action-{{ s.badge }}">{{ s.action }}</span>
+                        </td>
+                        <td>
+                          <button type="button" class="btn-table-paper" onclick="openTradeModal('{{ s.symbol }}', '{{ s.symbol }}', 'Stock', {{ s.last_raw }}, 10, {{ s.stop_loss_raw }}, {{ s.target_raw }}, {{ s.target_raw * 1.03 }})">
+                            + Shadow Trade
+                          </button>
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% endif %}
+          </div>
+
+          <!-- ETFS WATCHLIST TAB CONTENT -->
+          <div class="tab-content" id="tabContentEtfs">
+            {% if etfs_watchlist %}
+              <div class="table-responsive">
+                <table class="watchlist-table">
+                  <thead>
+                    <tr>
+                      <th>ETF Symbol</th>
+                      <th>Benchmark</th>
+                      <th>Category</th>
+                      <th>NAV</th>
+                      <th>1D Change</th>
+                      <th>1Y CAGR</th>
+                      <th>Score</th>
+                      <th>Action</th>
+                      <th>Paper Trade</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for e in etfs_watchlist %}
+                      <tr>
+                        <td>
+                          <a href="/?symbol={{ e.symbol }}" class="asset-link">
+                            <strong>{{ e.symbol }}</strong>
+                          </a>
+                        </td>
+                        <td>{{ e.name }}</td>
+                        <td><span class="cat-pill">{{ e.category }}</span></td>
+                        <td>{{ e.last }}</td>
+                        <td class="{{ 'positive' if '+' in e.change_1d else 'negative' }}">{{ e.change_1d }}</td>
+                        <td class="positive">{{ e.cagr_1y }}</td>
+                        <td><span class="score-pill score-{{ e.badge }}">{{ e.score }}</span></td>
+                        <td><span class="action-tag action-{{ e.badge }}">{{ e.action }}</span></td>
+                        <td>
+                          <button type="button" class="btn-table-paper" onclick="openTradeModal('{{ e.symbol }}', '{{ e.name }}', 'ETF', {{ e.last_raw }}, 20, {{ e.stop_loss_raw }}, {{ e.target_raw }}, {{ e.target_raw * 1.03 }})">
+                            + Shadow Trade
+                          </button>
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% endif %}
+          </div>
+
+          <!-- MUTUAL FUNDS WATCHLIST TAB CONTENT -->
+          <div class="tab-content" id="tabContentMfs">
+            {% if mfs_watchlist %}
+              <div class="table-responsive">
+                <table class="watchlist-table">
+                  <thead>
+                    <tr>
+                      <th>Scheme Name</th>
+                      <th>Category</th>
+                      <th>NAV</th>
+                      <th>1Y Return</th>
+                      <th>3Y CAGR</th>
+                      <th>Sharpe Ratio</th>
+                      <th>Score</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for m in mfs_watchlist %}
+                      <tr>
+                        <td>
+                          <a href="/?symbol={{ m.symbol }}" class="asset-link">
+                            <strong>{{ m.name }}</strong>
+                          </a>
+                        </td>
+                        <td><span class="cat-pill">{{ m.category }}</span></td>
+                        <td>{{ m.nav }}</td>
+                        <td class="positive">{{ m.cagr_1y }}</td>
+                        <td class="positive"><strong>{{ m.cagr_3y }}</strong></td>
+                        <td class="positive">{{ m.sharpe }}</td>
+                        <td><span class="score-pill score-{{ m.badge }}">{{ m.score }}</span></td>
+                        <td><span class="action-tag action-{{ m.badge }}">{{ m.action }}</span></td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% endif %}
+          </div>
+        </section>
+      </div>
+
+      <!-- ====================================================================
+           VIEW 2: DEDICATED GOAL-BASED PORTFOLIO & SIP ARCHITECT
+           ==================================================================== -->
+      <div class="main-page-section" id="viewPlanner">
+        <section class="planner-standalone-panel">
+          <div class="section-title-bar">
+            <div>
+              <h2>🎯 Goal-Based Portfolio & Smart SIP Architect</h2>
+              <p>Generate institutional asset allocations or optimized multi-fund monthly SIP baskets tailored to your capital and risk appetite.</p>
+            </div>
+            <div class="planner-toggle-strip">
+              <button type="button" class="btn-planner-sub active" id="subBtnLumpSum" onclick="switchPlannerMode('lumpsum')">
+                💼 Lump-Sum Portfolio Builder
+              </button>
+              <button type="button" class="btn-planner-sub" id="subBtnSip" onclick="switchPlannerMode('sip')">
+                💰 Smart SIP Wealth Architect
+              </button>
+            </div>
+          </div>
+
+          <!-- MODE A: LUMP SUM PORTFOLIO BUILDER -->
+          <div class="planner-mode-view active" id="plannerViewLumpSum">
+            <form class="planner-control-card" onsubmit="generateCustomPortfolio(event)">
+              <div class="p-control-row">
+                <div class="p-input-group">
+                  <label>Total Investment Capital (₹)</label>
+                  <input type="number" id="lumpCapitalInput" value="500000" min="10000" step="10000" class="p-input" required>
+                  <div class="p-quick-chips">
+                    <button type="button" onclick="setLumpCapital(100000)">₹1 Lakh</button>
+                    <button type="button" onclick="setLumpCapital(500000)">₹5 Lakh</button>
+                    <button type="button" onclick="setLumpCapital(1000000)">₹10 Lakh</button>
+                    <button type="button" onclick="setLumpCapital(2500000)">₹25 Lakh</button>
+                  </div>
+                </div>
+
+                <div class="p-input-group">
+                  <label>Investment Horizon (Years)</label>
+                  <select id="lumpHorizonSelect" class="p-select">
+                    <option value="0.5">Short Term (< 1 Year)</option>
+                    <option value="1.0">1 Year (Tactical)</option>
+                    <option value="3.0" selected>3 Years (Medium Term)</option>
+                    <option value="5.0">5 Years (Long Term)</option>
+                    <option value="10.0">10+ Years (Wealth Creation)</option>
+                  </select>
+                </div>
+
+                <div class="p-input-group">
+                  <label>Risk Profile / Tolerance</label>
+                  <select id="lumpRiskSelect" class="p-select">
+                    <option value="conservative">🟢 Conservative (Low Drawdown, Index + Gold)</option>
+                    <option value="moderate" selected>🔵 Moderate / Balanced (Core Index + Flexi-Cap)</option>
+                    <option value="aggressive">🔴 Aggressive / High Alpha (Small-Cap + Growth)</option>
+                  </select>
+                </div>
+
+                <div class="p-btn-group">
+                  <button type="submit" class="btn btn-primary" style="width: 100%; height: 44px; margin-top: 22px;">
+                    🚀 Generate Custom Portfolio
+                  </button>
+                </div>
+              </div>
+            </form>
+
+            <!-- Dynamic Lump-Sum Result Container -->
+            <div id="lumpSumResultContainer">
+              <div class="planner-summary-grid">
+                <div class="psg-card">
+                  <span class="psg-label">Target Investment</span>
+                  <strong class="psg-val" id="resLumpCapital">{{ lump_sum_plan.capital_amount }}</strong>
+                  <span class="psg-sub" id="resLumpHorizon">{{ lump_sum_plan.horizon_years }} Horizon</span>
+                </div>
+                <div class="psg-card">
+                  <span class="psg-label">Expected Maturity Corpus</span>
+                  <strong class="psg-val highlight-value" id="resLumpCorpus">{{ lump_sum_plan.expected_maturity_corpus }}</strong>
+                  <span class="psg-sub positive" id="resLumpGain">+{{ lump_sum_plan.expected_gain_rupees }} ({{ lump_sum_plan.expected_gain_pct }})</span>
+                </div>
+                <div class="psg-card">
+                  <span class="psg-label">Expected Portfolio CAGR</span>
+                  <strong class="psg-val positive" id="resLumpCagr">{{ lump_sum_plan.expected_cagr }}</strong>
+                  <span class="psg-sub" id="resLumpRisk">{{ lump_sum_plan.risk_profile }}</span>
+                </div>
+                <div class="psg-card">
+                  <span class="psg-label">Max Historical Drawdown</span>
+                  <strong class="psg-val negative" id="resLumpMaxDd">{{ lump_sum_plan.portfolio_max_drawdown }}</strong>
+                  <span class="psg-sub">Downside Shock Protection</span>
+                </div>
+              </div>
+
+              <div class="planner-split-layout">
+                <div class="planner-donut-box" id="resLumpDonutBox">
+                  <h4>Asset Allocation Breakdown</h4>
+                  {{ lump_sum_plan.chart_svg|safe }}
+                </div>
+
+                <div class="planner-table-box">
+                  <h4>Recommended Asset Allocation Basket</h4>
+                  <div class="table-responsive">
+                    <table class="watchlist-table" id="resLumpAssetTable">
+                      <thead>
+                        <tr>
+                          <th>Asset Name</th>
+                          <th>Category</th>
+                          <th>Weight %</th>
+                          <th>Allocated Capital</th>
+                          <th>Expected CAGR</th>
+                          <th>Sharpe</th>
+                          <th>Max Drawdown</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {% for a in lump_sum_plan.assets %}
+                          <tr>
+                            <td>
+                              <a href="/?symbol={{ a.symbol }}" class="asset-link">
+                                <strong>{{ a.asset_name }}</strong>
+                              </a>
+                            </td>
+                            <td><span class="cat-pill">{{ a.category }}</span></td>
+                            <td><strong class="highlight-value">{{ a.allocation_pct }}</strong></td>
+                            <td class="font-mono"><strong>{{ a.allocation_rupees }}</strong></td>
+                            <td class="positive font-mono">{{ a.cagr }}</td>
+                            <td class="positive font-mono">{{ a.sharpe }}</td>
+                            <td class="negative font-mono">{{ a.max_dd }}</td>
+                          </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- MODE B: SMART SIP WEALTH ARCHITECT -->
+          <div class="planner-mode-view" id="plannerViewSip">
+            <form class="planner-control-card" onsubmit="generateCustomSip(event)">
+              <div class="p-control-row">
+                <div class="p-input-group">
+                  <label>Monthly SIP Budget (₹ / Month)</label>
+                  <input type="number" id="sipMonthlyInput" value="10000" min="1000" step="1000" class="p-input" required>
+                  <div class="p-quick-chips">
+                    <button type="button" onclick="setSipAmount(2500)">₹2.5k</button>
+                    <button type="button" onclick="setSipAmount(5000)">₹5k</button>
+                    <button type="button" onclick="setSipAmount(10000)">₹10k</button>
+                    <button type="button" onclick="setSipAmount(25000)">₹25k</button>
+                    <button type="button" onclick="setSipAmount(50000)">₹50k</button>
+                  </div>
+                </div>
+
+                <div class="p-input-group">
+                  <label>SIP Horizon (Years)</label>
+                  <select id="sipHorizonSelect" class="p-select">
+                    <option value="1.0">1 Year (Short Term)</option>
+                    <option value="3.0">3 Years (Medium Term)</option>
+                    <option value="5.0" selected>5 Years (Disciplined Compounding)</option>
+                    <option value="10.0">10 Years (Wealth Creation)</option>
+                    <option value="15.0">15+ Years (Retirement Corpus)</option>
+                  </select>
+                </div>
+
+                <div class="p-input-group">
+                  <label>Risk Appetite</label>
+                  <select id="sipRiskSelect" class="p-select">
+                    <option value="conservative">🟢 Low Risk (Index + Dynamic Balanced)</option>
+                    <option value="moderate" selected>🔵 Balanced / Moderate (Index + Flexi + Small Cap)</option>
+                    <option value="aggressive">🔴 High Risk / High Alpha (Small Cap + Nasdaq + Flexi)</option>
+                  </select>
+                </div>
+
+                <div class="p-btn-group">
+                  <button type="submit" class="btn btn-primary" style="width: 100%; height: 44px; margin-top: 22px;">
+                    ✨ Recommend Best SIP Basket
+                  </button>
+                </div>
+              </div>
+            </form>
+
+            <!-- Dynamic SIP Result Container -->
+            <div id="sipResultContainer">
+              <div class="planner-summary-grid">
+                <div class="psg-card">
+                  <span class="psg-label">Monthly SIP</span>
+                  <strong class="psg-val" id="resSipMonthly">{{ sip_plan.monthly_sip_amount }} / mo</strong>
+                  <span class="psg-sub" id="resSipHorizon">{{ sip_plan.horizon_years }} Duration</span>
+                </div>
+                <div class="psg-card">
+                  <span class="psg-label">Total Out-of-Pocket Invested</span>
+                  <strong class="psg-val" id="resSipInvested">{{ sip_plan.total_invested }}</strong>
+                  <span class="psg-sub">Disciplined Installments</span>
+                </div>
+                <div class="psg-card">
+                  <span class="psg-label">Projected Future Wealth</span>
+                  <strong class="psg-val highlight-value" id="resSipCorpus">{{ sip_plan.projected_corpus }}</strong>
+                  <span class="psg-sub positive" id="resSipGain">+{{ sip_plan.wealth_gain_rupees }} ({{ sip_plan.wealth_gain_pct }})</span>
+                </div>
+                <div class="psg-card">
+                  <span class="psg-label">Expected Annual Return</span>
+                  <strong class="psg-val positive" id="resSipCagr">{{ sip_plan.expected_cagr }}</strong>
+                  <span class="psg-sub">Compound Growth</span>
+                </div>
+              </div>
+
+              <div class="sip-basket-box">
+                <div class="sip-basket-header">
+                  <h4>Curated Monthly Multi-Fund SIP Allocation</h4>
+                  <span class="cat-pill cat-strong-buy" id="resSipRiskTitle">{{ sip_plan.risk_profile }}</span>
+                </div>
+
+                <div class="sip-funds-grid" id="resSipFundsGrid">
+                  {% for f in sip_plan.basket %}
+                    <div class="sip-fund-card">
+                      <div class="sfc-top">
+                        <div>
+                          <span class="cat-pill">{{ f.category }}</span>
+                          <h5 class="sfc-name"><a href="/?symbol={{ f.symbol }}">{{ f.scheme_name }}</a></h5>
+                        </div>
+                        <div class="sfc-split">
+                          <strong class="sfc-split-pct">{{ f.monthly_split_pct_fmt }}</strong>
+                          <span class="sfc-split-rupees">{{ f.monthly_rupees_fmt }}/mo</span>
+                        </div>
+                      </div>
+                      <div class="sfc-stats">
+                        <div><span>3Y Return:</span> <strong class="positive">{{ f.cagr_3y }}</strong></div>
+                        <div><span>Sharpe:</span> <strong class="positive">{{ f.sharpe }}</strong></div>
+                      </div>
+                      <p class="sfc-role">{{ f.role }}</p>
+                    </div>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- ====================================================================
+           VIEW 3: MULTI-ASSET EVALUATOR & "CAN I BUY?" SEARCH
+           ==================================================================== -->
+      <div class="main-page-section" id="viewEvaluator">
+        <section class="search-section">
+          <div class="search-container">
+            <div class="search-label-row">
+              <h2>Multi-Asset Evaluator & Risk Sizing Engine</h2>
+              <span class="search-hint">Search Any <strong>Stock</strong> (NSE/BSE), <strong>ETF</strong>, or <strong>Mutual Fund</strong></span>
+            </div>
+            <form class="search-form" method="get" action="/" id="assetSearchForm" autocomplete="off">
+              <div class="search-input-wrapper">
+                <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input
+                  type="search"
+                  name="symbol"
+                  id="assetSearchInput"
+                  value="{{ searched_query }}"
+                  placeholder="Search Stocks (RELIANCE, TCS), ETFs (NIFTYBEES, GOLDBEES), or Mutual Funds (Parag Parikh, Quant Small Cap)..."
+                  aria-label="Search Stock, ETF, or Mutual Fund"
+                >
+                <div id="searchSuggestionsDropdown" class="suggestions-dropdown hidden"></div>
+              </div>
+              <button type="submit" class="btn btn-primary" id="searchSubmitBtn">Evaluate & Size</button>
+            </form>
+
+            <!-- Quick Discovery Chips -->
+            <div class="quick-chips">
+              <span class="chip-label">Quick Search:</span>
+              <a href="/?symbol=RELIANCE" class="chip chip-stock">Reliance</a>
+              <a href="/?symbol=TCS" class="chip chip-stock">TCS</a>
+              <a href="/?symbol=HDFCBANK" class="chip chip-stock">HDFC Bank</a>
+              <a href="/?symbol=NIFTYBEES" class="chip chip-etf">NIFTYBEES (Index ETF)</a>
+              <a href="/?symbol=GOLDBEES" class="chip chip-etf">GOLDBEES (Gold)</a>
+              <a href="/?symbol=MON100" class="chip chip-etf">MON100 (Nasdaq 100)</a>
+              <a href="/?symbol=MF_122639" class="chip chip-mf">Parag Parikh Flexi Cap</a>
+              <a href="/?symbol=MF_120828" class="chip chip-mf">Quant Small Cap</a>
+              <a href="/?symbol=MF_118989" class="chip chip-mf">HDFC Balanced Advantage</a>
+            </div>
+          </div>
+        </section>
+
+        <!-- Evaluated Asset Card Display (If searched) -->
+        {% if asset %}
+          {% if asset.ok %}
+            <section class="asset-results-container">
+              {% if asset.data_quality_warning %}
+                <div class="data-quality-alert">
+                  <span class="dqa-icon">⚠️</span>
+                  <span>{{ asset.data_quality_warning }}</span>
+                </div>
+              {% endif %}
+
+              <!-- HERO "CAN I BUY?" VERDICT CARD -->
+              <article class="verdict-hero-card {{ asset.verdict.badge }}">
+                <div class="verdict-header">
+                  <div class="asset-meta">
+                    <div class="asset-badges">
+                      <span class="badge-type {{ asset.asset_type|lower|replace(' ', '-') }}">{{ asset.asset_type }}</span>
+                      <span class="badge-category">{{ asset.category if asset.category else asset.sector }}</span>
+                    </div>
+                    <h2 class="asset-name">{{ asset.name }}</h2>
+                    <span class="asset-symbol-code">{{ asset.symbol }}</span>
+                  </div>
+                  <div class="asset-price-box">
+                    <div class="price-val">{{ asset.display_last_close if asset.display_last_close else asset.display_nav }}</div>
+                    <div class="price-change {{ 'positive' if asset.day_change_pct > 0 else 'negative' if asset.day_change_pct < 0 else 'flat' }}">
+                      {{ asset.display_day_change_pct }} (1D)
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Main Decision Banner -->
+                <div class="verdict-decision-box">
+                  <div class="verdict-score-ring">
+                    <div class="score-circle">
+                      <span class="score-num">{{ "%.0f"|format(asset.verdict.score) }}</span>
+                      <span class="score-max">/100</span>
+                    </div>
+                    <span class="score-label">Raw Model Score</span>
+                  </div>
+
+                  <div class="verdict-content">
+                    <div class="verdict-banner-tag">
+                      <span class="verdict-prompt">CAN I BUY?</span>
+                      <strong class="verdict-headline">{{ asset.verdict.overall }}</strong>
+                    </div>
+                    <p class="verdict-summary">{{ asset.verdict.summary }}</p>
+
+                    {% if asset.calibration %}
+                      <div class="calibration-badge-row">
+                        <div class="cal-item">
+                          <span class="cal-label">Empirical 5D Win Rate:</span>
+                          <strong class="cal-val positive">{{ asset.calibration.calibrated_win_rate }}</strong>
+                        </div>
+                        <div class="cal-item">
+                          <span class="cal-label">Calibration Note:</span>
+                          <span class="cal-note-text">{{ asset.calibration.calibration_note }}</span>
+                        </div>
+                      </div>
+                    {% endif %}
+                  </div>
+
+                  {% if asset.asset_type != "Mutual Fund" and not vix_regime.kill_switch_active and asset.verdict.badge in ['strong-buy', 'buy'] %}
+                    <div class="hitl-action-box">
+                      <button type="button" class="btn btn-paper-trade" onclick="openTradeModal('{{ asset.clean_symbol }}', '{{ asset.name }}', '{{ asset.asset_type }}', {{ asset.last_close }}, {{ asset.position_sizing.recommended_shares }}, {{ asset.levels.s1.replace('₹','').replace(',','') if asset.levels else asset.last_close * 0.97 }}, {{ asset.levels.r1.replace('₹','').replace(',','') if asset.levels else asset.last_close * 1.04 }}, {{ asset.levels.r2.replace('₹','').replace(',','') if asset.levels else asset.last_close * 1.07 }})">
+                        🛡️ Take Paper Trade (Human Confirm)
+                      </button>
+                      <span class="hitl-sub">Manual Sanity Check Required</span>
+                    </div>
+                  {% endif %}
+                </div>
+              </article>
+
+              <!-- FACTOR ATTRIBUTION & EXPLAINABILITY WATERFALL -->
+              {% if asset.factors_breakdown %}
+                <article class="panel factor-attribution-panel">
+                  <div class="panel-header">
+                    <div class="panel-title-group">
+                      <span class="panel-icon">🔍</span>
+                      <h3>Signal Factor Attribution & Explainability Audit</h3>
+                    </div>
+                    <span class="panel-tag">Mathematical Audit Trail</span>
+                  </div>
+                  <div class="table-responsive">
+                    <table class="watchlist-table attribution-table">
+                      <thead>
+                        <tr>
+                          <th>Factor / Setup Component</th>
+                          <th>Impact</th>
+                          <th>Point Contribution</th>
+                          <th>Quantitative Rationale</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {% for f in asset.factors_breakdown %}
+                          <tr>
+                            <td><strong>{{ f.factor }}</strong></td>
+                            <td><span class="factor-pill factor-{{ f.impact|lower }}">{{ f.impact }}</span></td>
+                            <td class="font-mono {{ 'positive' if f.points > 0 else 'negative' if f.points < 0 else '' }}">
+                              <strong>{{ f.points|round(1) if f.points == 50 else "%+.1f"|format(f.points) }} pts</strong>
+                            </td>
+                            <td class="attribution-reason-cell">{{ f.reason }}</td>
+                          </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+                </article>
+              {% endif %}
+
+              <!-- POSITION SIZING & REAL-WORLD FRICTION CARD -->
+              {% if asset.asset_type != "Mutual Fund" and asset.position_sizing %}
+                <article class="panel position-sizing-panel">
+                  <div class="panel-header">
+                    <div class="panel-title-group">
+                      <span class="panel-icon">⚖️</span>
+                      <h3>Position Sizing, 1% ADV Liquidity & Overnight Gap Risk</h3>
+                    </div>
+                    <span class="panel-tag">1% Risk Rule (₹{{ paper_portfolio.total_equity }} Capital)</span>
+                  </div>
+
+                  {% if asset.position_sizing.liquidity_warning %}
+                    <div class="liquidity-alert-box">
+                      <span>{{ asset.position_sizing.liquidity_warning }}</span>
+                    </div>
+                  {% endif %}
+
+                  <div class="sizing-grid">
+                    <div class="sz-card">
+                      <span class="sz-label">Recommended Shares</span>
+                      <strong class="sz-val highlight-value">{{ asset.position_sizing.recommended_shares }} Shares</strong>
+                      <span class="sz-sub">Position: {{ asset.position_sizing.position_value }} ({{ asset.position_sizing.position_pct }})</span>
+                    </div>
+                    <div class="sz-card">
+                      <span class="sz-label">Max Risk on Stop Loss</span>
+                      <strong class="sz-val negative">{{ asset.position_sizing.max_loss_rupees }}</strong>
+                      <span class="sz-sub">{{ asset.position_sizing.risk_pct }} of Total Capital</span>
+                    </div>
+                    <div class="sz-card">
+                      <span class="sz-label">10D ADV Liquidity</span>
+                      <strong class="sz-val">{{ asset.position_sizing.adv_pct }} of ADV</strong>
+                      <span class="sz-sub">10D Volume: {{ asset.position_sizing.adv_shares_10d }} shs</span>
+                    </div>
+                    <div class="sz-card">
+                      <span class="sz-label">Gross vs Net Realized R:R</span>
+                      <strong class="sz-val positive">{{ asset.position_sizing.net_realized_rr }} (Net)</strong>
+                      <span class="sz-sub">Gross: {{ asset.position_sizing.gross_rr }} before friction</span>
+                    </div>
+                    <div class="sz-card">
+                      <span class="sz-label">Total Taxes & Slippage</span>
+                      <strong class="sz-val">{{ asset.position_sizing.total_friction }}</strong>
+                      <span class="sz-sub">STT, Brokerage, GST & 0.1% Slippage</span>
+                    </div>
+                    <div class="sz-card">
+                      <span class="sz-label">Overnight Gap Hazard</span>
+                      <strong class="sz-val negative">{{ asset.position_sizing.overnight_gap_hazard }}</strong>
+                      <span class="sz-sub">Worst 2x ATR Gap: {{ asset.position_sizing.worst_case_loss_rupees }} ({{ asset.position_sizing.worst_case_loss_pct }})</span>
+                    </div>
+                  </div>
+                  <p class="sizing-rationale-text">💡 <strong>Risk Engine Rationale:</strong> {{ asset.position_sizing.sizing_rationale }}</p>
+                </article>
+              {% endif %}
+
+              <!-- DUAL HORIZON MATRIX -->
+              <section class="horizon-matrix">
+                <article class="horizon-card short-term-card">
+                  <div class="horizon-header">
+                    <div class="horizon-title-box">
+                      <span class="horizon-icon">⚡</span>
+                      <div>
+                        <h3>Short-Term Trading Outlook</h3>
+                        <span class="horizon-sub">Horizon: {{ asset.verdict.short_term_horizon }}</span>
+                      </div>
+                    </div>
+                    <span class="horizon-status-pill {{ asset.verdict.badge }}">{{ asset.verdict.short_term_action }}</span>
+                  </div>
+
+                  {% if asset.asset_type == "Mutual Fund" %}
+                    <div class="alert-box warning-box">
+                      <strong>⚠️ Exit Load & STCG Notice:</strong>
+                      <p>{{ asset.verdict.short_term_advice }}</p>
+                    </div>
+                  {% else %}
+                    <div class="trade-levels-grid">
+                      <div class="level-box entry-box">
+                        <span class="lvl-label">Suggested Entry Zone (Limit Order)</span>
+                        <strong class="lvl-val">{{ asset.verdict.short_term_entry }}</strong>
+                      </div>
+                      <div class="level-box target-box">
+                        <span class="lvl-label">Target 1 (Book 50% & Trail)</span>
+                        <strong class="lvl-val positive">{{ asset.verdict.short_term_target_1 }}</strong>
+                      </div>
+                      <div class="level-box target-box">
+                        <span class="lvl-label">Target 2 (Extended Runner)</span>
+                        <strong class="lvl-val positive">{{ asset.verdict.short_term_target_2 }}</strong>
+                      </div>
+                      <div class="level-box sl-box">
+                        <span class="lvl-label">Stop Loss / Invalidation</span>
+                        <strong class="lvl-val negative">{{ asset.verdict.short_term_stop_loss }}</strong>
+                      </div>
+                      <div class="level-box rr-box">
+                        <span class="lvl-label">Realized Net R:R</span>
+                        <strong class="lvl-val">{{ asset.verdict.short_term_rr }}</strong>
+                      </div>
+                    </div>
+                  {% endif %}
+                </article>
+
+                <article class="horizon-card long-term-card">
+                  <div class="horizon-header">
+                    <div class="horizon-title-box">
+                      <span class="horizon-icon">🏛️</span>
+                      <div>
+                        <h3>Long-Term Investment Outlook</h3>
+                        <span class="horizon-sub">Horizon: {{ asset.verdict.long_term_horizon }}</span>
+                      </div>
+                    </div>
+                    <span class="horizon-status-pill {{ asset.verdict.badge }}">{{ asset.verdict.long_term_action }}</span>
+                  </div>
+
+                  <div class="returns-compounding-grid">
+                    {% if asset.asset_type == "Mutual Fund" %}
+                      <div class="ret-cell"><span class="ret-period">1M</span><strong class="ret-val positive">{{ asset.returns['1m'] }}</strong></div>
+                      <div class="ret-cell"><span class="ret-period">6M</span><strong class="ret-val positive">{{ asset.returns['6m'] }}</strong></div>
+                      <div class="ret-cell"><span class="ret-period">1Y</span><strong class="ret-val positive">{{ asset.returns['1y'] }}</strong></div>
+                      <div class="ret-cell highlight-cell"><span class="ret-period">3Y CAGR</span><strong class="ret-val positive">{{ asset.returns['3y_cagr'] }}</strong></div>
+                      <div class="ret-cell highlight-cell"><span class="ret-period">5Y CAGR</span><strong class="ret-val positive">{{ asset.returns['5y_cagr'] }}</strong></div>
+                    {% else %}
+                      <div class="ret-cell"><span class="ret-period">5D</span><strong class="ret-val positive">{{ asset.returns['5d'] }}</strong></div>
+                      <div class="ret-cell"><span class="ret-period">1M</span><strong class="ret-val positive">{{ asset.returns['1m'] }}</strong></div>
+                      <div class="ret-cell"><span class="ret-period">6M</span><strong class="ret-val positive">{{ asset.returns['6m'] }}</strong></div>
+                      <div class="ret-cell"><span class="ret-period">1Y</span><strong class="ret-val positive">{{ asset.returns['1y'] }}</strong></div>
+                      <div class="ret-cell highlight-cell"><span class="ret-period">3Y CAGR</span><strong class="ret-val positive">{{ asset.returns['3y_cagr'] }}</strong></div>
+                    {% endif %}
+                  </div>
+                </article>
+              </section>
+            </section>
+          {% else %}
+            <div class="error-panel">
+              <span class="error-icon">⚠️</span>
+              <p class="error-msg">{{ asset.error }}</p>
+            </div>
+          {% endif %}
+        {% endif %}
+      </div>
+
+      <!-- ====================================================================
+           VIEW 4: SHADOW PAPER PORTFOLIO
+           ==================================================================== -->
+      <div class="main-page-section" id="viewPaper">
+        <section class="watchlists-section">
+          <div class="paper-header-row">
+            <div class="paper-portfolio-summary-strip">
+              <div class="pps-box">
+                <span class="pps-label">Total Virtual Equity</span>
+                <strong class="pps-val highlight-value">{{ paper_portfolio.total_equity }}</strong>
+              </div>
+              <div class="pps-box">
+                <span class="pps-label">Available Cash</span>
+                <strong class="pps-val">{{ paper_portfolio.cash_balance }}</strong>
+              </div>
+              <div class="pps-box">
+                <span class="pps-label">Realized Net P&L</span>
+                <strong class="pps-val {{ 'positive' if '+' in paper_portfolio.realized_pnl else 'negative' }}">{{ paper_portfolio.realized_pnl }}</strong>
+              </div>
+              <div class="pps-box">
+                <span class="pps-label">Open Unrealized P&L</span>
+                <strong class="pps-val {{ 'positive' if '+' in paper_portfolio.unrealized_pnl else 'negative' }}">{{ paper_portfolio.unrealized_pnl }}</strong>
+              </div>
+              <div class="pps-box">
+                <span class="pps-label">Closed Win Rate</span>
+                <strong class="pps-val positive">{{ paper_portfolio.win_rate }}</strong>
+              </div>
+            </div>
+
+            {% if paper_portfolio.open_trades_count > 0 %}
+              <div class="flatten-all-wrapper">
+                <button type="button" class="btn btn-flatten-all" onclick="flattenAllPositions()">
+                  🚨 FLATTEN ALL (Emergency Close {{ paper_portfolio.open_trades_count }} Positions)
+                </button>
+              </div>
+            {% endif %}
+          </div>
+
+          <h3 class="sub-tab-title">Active Open Shadow Positions ({{ paper_portfolio.open_trades_count }})</h3>
+          {% if paper_portfolio.open_trades %}
+            <div class="table-responsive">
+              <table class="watchlist-table">
+                <thead>
+                  <tr>
+                    <th>Symbol</th>
+                    <th>Entry Date</th>
+                    <th>Entry Price</th>
+                    <th>Current Price</th>
+                    <th>Qty</th>
+                    <th>Value</th>
+                    <th>Stop Loss</th>
+                    <th>Target 1</th>
+                    <th>Unrealized P&L</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for t in paper_portfolio.open_trades %}
+                    <tr>
+                      <td><strong>{{ t.symbol }}</strong></td>
+                      <td>{{ t.entry_date }}</td>
+                      <td>{{ t.entry_price }}</td>
+                      <td>{{ t.current_price }}</td>
+                      <td>{{ t.quantity }}</td>
+                      <td>{{ t.position_value }}</td>
+                      <td class="negative">{{ t.stop_loss }}</td>
+                      <td class="positive">{{ t.target_1 }}</td>
+                      <td class="{{ 'positive' if t.unrealized_pnl_raw > 0 else 'negative' }}">
+                        <strong>{{ t.unrealized_pnl }} ({{ t.unrealized_pct }})</strong>
+                      </td>
+                      <td>
+                        <button type="button" class="btn-close-pos" onclick="closeTrade({{ t.id }})">Close Position</button>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <p class="empty-msg">No open paper trades. Search any asset above and click 'Take Paper Trade' to simulate forward execution.</p>
+          {% endif %}
+
+          {% if paper_portfolio.closed_trades %}
+            <h3 class="sub-tab-title" style="margin-top: 24px;">Closed Trades History</h3>
+            <div class="table-responsive">
+              <table class="watchlist-table">
+                <thead>
+                  <tr>
+                    <th>Symbol</th>
+                    <th>Entry</th>
+                    <th>Exit</th>
+                    <th>Qty</th>
+                    <th>Entry Px</th>
+                    <th>Exit Px</th>
+                    <th>Net P&L (After Taxes & Friction)</th>
+                    <th>Exit Reason</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for ct in paper_portfolio.closed_trades %}
+                    <tr>
+                      <td><strong>{{ ct.symbol }}</strong></td>
+                      <td>{{ ct.entry_date }}</td>
+                      <td>{{ ct.exit_date }}</td>
+                      <td>{{ ct.quantity }}</td>
+                      <td>{{ ct.entry_price }}</td>
+                      <td>{{ ct.exit_price }}</td>
+                      <td class="{{ 'positive' if ct.net_pnl_raw > 0 else 'negative' }}">
+                        <strong>{{ ct.net_pnl }} ({{ ct.pnl_pct }})</strong>
+                      </td>
+                      <td><span class="cat-pill">{{ ct.exit_reason }}</span></td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% endif %}
+        </section>
+      </div>
+
+      <!-- ====================================================================
+           VIEW 5: CALIBRATION & MODEL DRIFT MONITOR
+           ==================================================================== -->
+      <div class="main-page-section" id="viewCalibration">
+        <section class="watchlists-section">
+          <div class="backtest-summary-header">
+            <div class="bsh-left">
+              <h3>2-Year Walk-Forward Backtest & Calibration</h3>
+              <p>Simulates daily quantitative setups across Nifty 50 and ETFs to benchmark nominal score vs actual win rate.</p>
+            </div>
+            <div class="bsh-right">
+              <span class="brier-pill">Brier Calibration Score: <strong>{{ backtest_stats.brier_score }}</strong> ({{ backtest_stats.brier_rating }})</span>
+            </div>
+          </div>
+
+          <div class="backtest-grid">
+            <div class="backtest-table-wrapper">
+              <table class="watchlist-table">
+                <thead>
+                  <tr>
+                    <th>Score Tier</th>
+                    <th>Nominal Confidence</th>
+                    <th>Actual 5D Win Rate</th>
+                    <th>5D Avg Return</th>
+                    <th>Profit Factor</th>
+                    <th>Overconfidence Gap</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for b in backtest_stats.buckets %}
+                    <tr>
+                      <td><strong>{{ b.tier_name }}</strong></td>
+                      <td>{{ b.nominal_confidence }}</td>
+                      <td class="positive"><strong>{{ b.win_rate_5d }}</strong></td>
+                      <td class="{{ 'positive' if '+' in b.avg_return_5d else 'negative' }}">{{ b.avg_return_5d }}</td>
+                      <td>{{ b.profit_factor_5d }}</td>
+                      <td class="{{ 'negative' if '+' in b.overconfidence_gap else 'positive' }}">{{ b.overconfidence_gap }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+
+            <div class="backtest-chart-box">
+              <h4>Reliability Calibration Curve</h4>
+              {{ backtest_stats.chart_svg|safe }}
+            </div>
+          </div>
+
+          <!-- Live Drift Monitor Section -->
+          <div class="drift-header-box" style="margin-top: 28px;">
+            <div class="bsh-left">
+              <h3>Rolling Live Model Drift Monitor (Rolling {{ drift_summary.window_days }} Days)</h3>
+              <p>Compares live resolved forward 5-day trade outcomes against the 2-year backtest baseline per tier.</p>
+            </div>
+            <div class="bsh-right">
+              <span class="drift-status-badge {{ 'badge-panic' if drift_summary.has_drift_alert else 'badge-healthy' }}">
+                {{ '⚠️ DRIFT ALERT' if drift_summary.has_drift_alert else '✅ CALIBRATION HEALTHY' }}
+              </span>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="watchlist-table">
+              <thead>
+                <tr>
+                  <th>Score Tier</th>
+                  <th>Resolved Samples (N)</th>
+                  <th>Backtest Baseline</th>
+                  <th>Live Rolling Win Rate</th>
+                  <th>Drift Gap</th>
+                  <th>Avg 5D Return</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for t in drift_summary.tiers %}
+                  <tr>
+                    <td><strong>{{ t.tier_name }}</strong></td>
+                    <td class="font-mono">{{ t.sample_count }}</td>
+                    <td class="font-mono">{{ t.baseline_win_rate }}</td>
+                    <td class="font-mono"><strong>{{ t.live_win_rate }}</strong></td>
+                    <td class="font-mono {{ 'negative' if '-' in t.gap else 'positive' if '+' in t.gap else '' }}">{{ t.gap }}</td>
+                    <td class="font-mono {{ 'positive' if '+' in t.avg_return else 'negative' if '-' in t.avg_return else '' }}">{{ t.avg_return }}</td>
+                    <td><span class="cat-pill cat-{{ t.status_badge }}">{{ t.status }}</span></td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <!-- Footer -->
+      <footer class="main-footer">
+        <p>Quantitative Pre-Market Model, Risk Engine & Shadow Trading System. Human-in-the-loop confirmation required. Not financial advice.</p>
+      </footer>
+    </main>
+
+    <!-- HUMAN-IN-THE-LOOP PRE-TRADE CONFIRMATION MODAL -->
+    <div id="paperTradeModal" class="modal-overlay hidden">
+      <div class="modal-card">
+        <div class="modal-header">
+          <div class="modal-title-group">
+            <span class="m-icon">🛡️</span>
+            <h3>Pre-Trade Sanity & Risk Confirmation</h3>
+          </div>
+          <button type="button" class="modal-close-btn" onclick="closeTradeModal()">&times;</button>
+        </div>
+
+        <form id="paperTradeForm" onsubmit="submitPaperTrade(event)">
+          <input type="hidden" id="modalSymbol" name="symbol">
+          <input type="hidden" id="modalName" name="name">
+          <input type="hidden" id="modalAssetType" name="asset_type">
+
+          <div class="modal-body">
+            <div class="modal-trade-summary">
+              <strong id="modalAssetTitle" class="m-asset-title">Asset</strong>
+              <div class="m-summary-grid">
+                <div><span>Entry Zone (Limit):</span> <strong id="modalEntryDisplay">₹0.00</strong></div>
+                <div><span>Quantity:</span> <input type="number" id="modalQtyInput" name="quantity" min="1" class="modal-input" required></div>
+                <div><span>Stop Loss (SL-L):</span> <strong id="modalSLDisplay" class="negative">₹0.00</strong></div>
+                <div><span>Target 1:</span> <strong id="modalT1Display" class="positive">₹0.00</strong></div>
+              </div>
+            </div>
+
+            <!-- Mandatory Sanity Checklist -->
+            <div class="modal-checklist">
+              <h4>Human Sanity Checklist (Confirm Before Execution):</h4>
+              <label class="check-item">
+                <input type="checkbox" required>
+                <span>No quarterly earnings / board meeting within next 7 days</span>
+              </label>
+              <label class="check-item">
+                <input type="checkbox" required>
+                <span>No major macroeconomic event (RBI MPC / US Fed) scheduled today</span>
+              </label>
+              <label class="check-item">
+                <input type="checkbox" required>
+                <span>Position size does not exceed 1% of 10D Average Daily Volume (ADV)</span>
+              </label>
+              <label class="check-item">
+                <input type="checkbox" required>
+                <span>Risk per trade is within 1% maximum capital allocation rule</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-refresh" onclick="closeTradeModal()">Cancel</button>
+            <button type="submit" class="btn btn-primary">Confirm & Log to Paper Portfolio</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Client-side script for master views, planner, tabs, and autocomplete -->
+    <script>
+      function switchMainView(viewName) {
+        document.querySelectorAll('.nav-link-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.main-page-section').forEach(sec => sec.classList.remove('active'));
+
+        if (viewName === 'market') {
+          document.getElementById('navBtnMarket').classList.add('active');
+          document.getElementById('viewMarket').classList.add('active');
+        } else if (viewName === 'evaluator') {
+          document.getElementById('navBtnEvaluator').classList.add('active');
+          document.getElementById('viewEvaluator').classList.add('active');
+        } else if (viewName === 'planner') {
+          document.getElementById('navBtnPlanner').classList.add('active');
+          document.getElementById('viewPlanner').classList.add('active');
+        } else if (viewName === 'paper') {
+          document.getElementById('navBtnPaper').classList.add('active');
+          document.getElementById('viewPaper').classList.add('active');
+        } else if (viewName === 'calibration') {
+          document.getElementById('navBtnDrift').classList.add('active');
+          document.getElementById('viewCalibration').classList.add('active');
+        }
+      }
+
+      function switchWatchlistTab(tabName) {
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('#viewMarket .tab-content').forEach(content => content.classList.remove('active'));
+        
+        if (tabName === 'stocks') {
+          document.getElementById('tabBtnStocks').classList.add('active');
+          document.getElementById('tabContentStocks').classList.add('active');
+        } else if (tabName === 'etfs') {
+          document.getElementById('tabBtnEtfs').classList.add('active');
+          document.getElementById('tabContentEtfs').classList.add('active');
+        } else if (tabName === 'mfs') {
+          document.getElementById('tabBtnMfs').classList.add('active');
+          document.getElementById('tabContentMfs').classList.add('active');
+        }
+      }
+
+      function switchPlannerMode(mode) {
+        document.getElementById('subBtnLumpSum').classList.remove('active');
+        document.getElementById('subBtnSip').classList.remove('active');
+        document.getElementById('plannerViewLumpSum').classList.remove('active');
+        document.getElementById('plannerViewSip').classList.remove('active');
+
+        if (mode === 'lumpsum') {
+          document.getElementById('subBtnLumpSum').classList.add('active');
+          document.getElementById('plannerViewLumpSum').classList.add('active');
+        } else {
+          document.getElementById('subBtnSip').classList.add('active');
+          document.getElementById('plannerViewSip').classList.add('active');
+        }
+      }
+
+      function setLumpCapital(amt) {
+        document.getElementById('lumpCapitalInput').value = amt;
+      }
+
+      function setSipAmount(amt) {
+        document.getElementById('sipMonthlyInput').value = amt;
+      }
+
+      function generateCustomPortfolio(e) {
+        e.preventDefault();
+        const payload = {
+          capital: parseFloat(document.getElementById('lumpCapitalInput').value),
+          horizon: parseFloat(document.getElementById('lumpHorizonSelect').value),
+          risk: document.getElementById('lumpRiskSelect').value,
+        };
+
+        fetch('/api/portfolio/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.ok) {
+            document.getElementById('resLumpCapital').innerText = data.capital_amount;
+            document.getElementById('resLumpHorizon').innerText = `${data.horizon_years} Horizon`;
+            document.getElementById('resLumpCorpus').innerText = data.expected_maturity_corpus;
+            document.getElementById('resLumpGain').innerText = `+${data.expected_gain_rupees} (${data.expected_gain_pct})`;
+            document.getElementById('resLumpCagr').innerText = data.expected_cagr;
+            document.getElementById('resLumpRisk').innerText = data.risk_profile;
+            document.getElementById('resLumpMaxDd').innerText = data.portfolio_max_drawdown;
+
+            document.getElementById('resLumpDonutBox').innerHTML = `<h4>Asset Allocation Breakdown</h4>${data.chart_svg}`;
+
+            const tbody = document.querySelector('#resLumpAssetTable tbody');
+            tbody.innerHTML = data.assets.map(a => `
+              <tr>
+                <td><a href="/?symbol=${a.symbol}" class="asset-link"><strong>${a.asset_name}</strong></a></td>
+                <td><span class="cat-pill">${a.category}</span></td>
+                <td><strong class="highlight-value">${a.allocation_pct}</strong></td>
+                <td class="font-mono"><strong>${a.allocation_rupees}</strong></td>
+                <td class="positive font-mono">${a.cagr}</td>
+                <td class="positive font-mono">${a.sharpe}</td>
+                <td class="negative font-mono">${a.max_dd}</td>
+              </tr>
+            `).join('');
+          }
+        });
+      }
+
+      function generateCustomSip(e) {
+        e.preventDefault();
+        const payload = {
+          monthly_amount: parseFloat(document.getElementById('sipMonthlyInput').value),
+          horizon: parseFloat(document.getElementById('sipHorizonSelect').value),
+          risk: document.getElementById('sipRiskSelect').value,
+        };
+
+        fetch('/api/portfolio/sip-plan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.ok) {
+            document.getElementById('resSipMonthly').innerText = `${data.monthly_sip_amount} / mo`;
+            document.getElementById('resSipHorizon').innerText = `${data.horizon_years} Duration`;
+            document.getElementById('resSipInvested').innerText = data.total_invested;
+            document.getElementById('resSipCorpus').innerText = data.projected_corpus;
+            document.getElementById('resSipGain').innerText = `+${data.wealth_gain_rupees} (${data.wealth_gain_pct})`;
+            document.getElementById('resSipCagr').innerText = data.expected_cagr;
+            document.getElementById('resSipRiskTitle').innerText = data.risk_profile;
+
+            const grid = document.getElementById('resSipFundsGrid');
+            grid.innerHTML = data.basket.map(f => `
+              <div class="sip-fund-card">
+                <div class="sfc-top">
+                  <div>
+                    <span class="cat-pill">${f.category}</span>
+                    <h5 class="sfc-name"><a href="/?symbol=${f.symbol}">${f.scheme_name}</a></h5>
+                  </div>
+                  <div class="sfc-split">
+                    <strong class="sfc-split-pct">${f.monthly_split_pct_fmt}</strong>
+                    <span class="sfc-split-rupees">${f.monthly_rupees_fmt}/mo</span>
+                  </div>
+                </div>
+                <div class="sfc-stats">
+                  <div><span>3Y Return:</span> <strong class="positive">${f.cagr_3y}</strong></div>
+                  <div><span>Sharpe:</span> <strong class="positive">${f.sharpe}</strong></div>
+                </div>
+                <p class="sfc-role">${f.role}</p>
+              </div>
+            `).join('');
+          }
+        });
+      }
+
+      let currentModalData = {};
+
+      function openTradeModal(symbol, name, assetType, entryPx, qty, sl, t1, t2) {
+        currentModalData = { symbol, name, assetType, entryPx, qty, sl, t1, t2 };
+        document.getElementById('modalSymbol').value = symbol;
+        document.getElementById('modalName').value = name;
+        document.getElementById('modalAssetType').value = assetType;
+        document.getElementById('modalAssetTitle').innerText = `${name} (${symbol})`;
+        document.getElementById('modalEntryDisplay').innerText = `₹${parseFloat(entryPx).toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+        document.getElementById('modalSLDisplay').innerText = `₹${parseFloat(sl).toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+        document.getElementById('modalT1Display').innerText = `₹${parseFloat(t1).toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+        document.getElementById('modalQtyInput').value = qty || 10;
+        
+        document.getElementById('paperTradeModal').classList.remove('hidden');
+      }
+
+      function closeTradeModal() {
+        document.getElementById('paperTradeModal').classList.add('hidden');
+      }
+
+      function submitPaperTrade(e) {
+        e.preventDefault();
+        const payload = {
+          symbol: document.getElementById('modalSymbol').value,
+          name: document.getElementById('modalName').value,
+          asset_type: document.getElementById('modalAssetType').value,
+          entry_price: currentModalData.entryPx,
+          quantity: parseInt(document.getElementById('modalQtyInput').value, 10),
+          stop_loss: currentModalData.sl,
+          target_1: currentModalData.t1,
+          target_2: currentModalData.t2,
+        };
+
+        fetch('/api/paper/trade/open', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.ok) {
+            alert(data.message);
+            closeTradeModal();
+            window.location.reload();
+          } else {
+            alert(`Error: ${data.error}`);
+          }
+        })
+        .catch(err => alert(`Execution error: ${err}`));
+      }
+
+      function closeTrade(tradeId) {
+        if (!confirm('Are you sure you want to close this paper trade at current market price?')) return;
+        fetch(`/api/paper/trade/close/${tradeId}`, { method: 'POST' })
+        .then(res => res.json())
+        .then(data => {
+          if (data.ok) {
+            alert(data.message);
+            window.location.reload();
+          } else {
+            alert(`Error: ${data.error}`);
+          }
+        });
+      }
+
+      function flattenAllPositions() {
+        if (!confirm('🚨 EMERGENCY FLATTEN: Are you sure you want to instantly exit ALL open positions at market price?')) return;
+        fetch('/api/paper/trade/flatten-all', { method: 'POST' })
+        .then(res => res.json())
+        .then(data => {
+          alert(data.message);
+          window.location.reload();
+        })
+        .catch(err => alert(`Flatten error: ${err}`));
+      }
+
+      // Autocomplete functionality
+      const searchInput = document.getElementById('assetSearchInput');
+      const dropdown = document.getElementById('searchSuggestionsDropdown');
+      let debounceTimeout = null;
+
+      if (searchInput && dropdown) {
+        searchInput.addEventListener('input', function() {
+          const q = this.value.trim();
+          clearTimeout(debounceTimeout);
+          if (q.length < 2) {
+            dropdown.innerHTML = '';
+            dropdown.classList.add('hidden');
+            return;
+          }
+          debounceTimeout = setTimeout(() => {
+            fetch(`/api/search-suggest?q=${encodeURIComponent(q)}`)
+              .then(res => res.json())
+              .then(data => {
+                if (!data || data.length === 0) {
+                  dropdown.innerHTML = '<div class="suggestion-item no-result">No suggestions found</div>';
+                } else {
+                  dropdown.innerHTML = data.map(item => `
+                    <a href="/?symbol=${encodeURIComponent(item.symbol)}" class="suggestion-item">
+                      <div class="sugg-left">
+                        <span class="sugg-name">${item.name}</span>
+                        <span class="sugg-symbol">${item.symbol}</span>
+                      </div>
+                      <span class="sugg-badge sugg-badge-${item.type.toLowerCase().replace(' ', '-')}">${item.type}</span>
+                    </a>
+                  `).join('');
+                }
+                dropdown.classList.remove('hidden');
+              })
+              .catch(() => {
+                dropdown.classList.add('hidden');
+              });
+          }, 250);
+        });
+
+        document.addEventListener('click', function(e) {
+          if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.classList.add('hidden');
+          }
+        });
+      }
+
+      // Auto-switch to Evaluator view if user searched an asset
+      {% if searched_query %}
+        switchMainView('evaluator');
+      {% endif %}
+    </script>
+  </body>
+</html>
