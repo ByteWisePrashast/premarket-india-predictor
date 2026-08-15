@@ -1006,7 +1006,11 @@ def get_top_crypto_watchlist() -> list[dict[str, Any]]:
         download_list = crypto_tickers + ["USDINR=X"]
         data = yf.download(download_list, period="7d", interval="1d", progress=False)["Close"]
         
-        usdinr = float(data["USDINR=X"].dropna().iloc[-1]) if "USDINR=X" in data else 86.5
+        usdinr = 86.5
+        if "USDINR=X" in data:
+            usd_s = data["USDINR=X"].dropna()
+            if not usd_s.empty:
+                usdinr = float(usd_s.iloc[-1])
         
         results = []
         for key, meta in KNOWN_CRYPTOS.items():
