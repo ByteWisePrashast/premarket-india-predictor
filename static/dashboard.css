@@ -3847,4 +3847,73 @@ body {
   font-weight: 600;
 }
 
+/* ==========================================================================
+   CRYPTOCURRENCY & WEB3 UI STYLES
+   ========================================================================== */
+
+.dp-block-header.crypto-header {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(168, 85, 247, 0.08));
+  border-left: 4px solid #f59e0b;
+}
+
+.badge-type.crypto {
+  background: rgba(245, 158, 11, 0.18);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 10.5px;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+[data-theme="light"] .badge-type.crypto {
+  background: #fef3c7;
+  color: #b45309;
+  border-color: #fde68a;
+}
+
+.cat-pill.cat-crypto {
+  background: rgba(168, 85, 247, 0.12);
+  color: #c084fc;
+  border-color: rgba(168, 85, 247, 0.28);
+}
+
+[data-theme="light"] .cat-pill.cat-crypto {
+  background: #f3e8ff;
+  color: #7e22ce;
+  border-color: #e9d5ff;
+}
+
+.btn-buy-crypto {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #0f172a;
+  font-weight: 700;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.25);
+}
+
+.btn-buy-crypto:hover {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+}
+
+.sugg-badge-crypto {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+[data-theme="light"] .sugg-badge-crypto {
+  background: #fef3c7;
+  color: #b45309;
+  border-color: #fde68a;
+}
+
+
 

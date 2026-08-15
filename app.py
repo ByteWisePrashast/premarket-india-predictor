@@ -25,12 +25,14 @@ from flask import Flask, jsonify, render_template, request
 import yfinance as yf
 
 from asset_engine import (
+    KNOWN_CRYPTOS,
     KNOWN_ETFS,
     POPULAR_MF_MAP,
     POPULAR_SUGGESTIONS,
     analyze_asset,
     fmt_curr,
     fmt_pct,
+    get_top_crypto_watchlist,
     search_mutual_funds,
 )
 from backtest_engine import compute_live_drift, get_fallback_backtest_stats, resolve_pending_signals
@@ -330,7 +332,19 @@ def get_paper_portfolio_state() -> dict[str, Any]:
 
         curr_price = entry
         try:
-            if not sym.startswith("MF_"):
+            if r["asset_type"] == "Crypto" or sym.endswith("-USD") or sym in ("BTC", "ETH", "SOL", "BNB", "XRP", "DOGE", "ADA", "AVAX", "LINK", "MATIC"):
+                tk = sym if sym.endswith("-USD") else f"{sym}-USD"
+                live_p = yf.Ticker(tk).fast_info.get("last_price")
+                if live_p and math.isfinite(float(live_p)):
+                    usdinr = 86.5
+                    try:
+                        u = yf.Ticker("USDINR=X").fast_info.get("last_price")
+                        if u and math.isfinite(float(u)):
+                            usdinr = float(u)
+                    except Exception:
+                        pass
+                    curr_price = float(live_p) * usdinr
+            elif not sym.startswith("MF_"):
                 ticker = f"{sym}.NS" if not sym.endswith(".NS") else sym
                 live_p = yf.Ticker(ticker).fast_info.get("last_price")
                 if live_p and math.isfinite(float(live_p)):
@@ -799,6 +813,7 @@ def index() -> str:
     stocks_watchlist = get_top_stocks_watchlist(report)
     etfs_watchlist = get_top_etfs_watchlist()
     mfs_watchlist = get_top_mutual_funds_watchlist()
+    crypto_watchlist = get_top_crypto_watchlist()
 
     return render_template(
         "dashboard.html",
@@ -808,6 +823,7 @@ def index() -> str:
         stocks_watchlist=stocks_watchlist,
         etfs_watchlist=etfs_watchlist,
         mfs_watchlist=mfs_watchlist,
+        crypto_watchlist=crypto_watchlist,
         daily_picks=daily_picks,
         paper_portfolio=paper_portfolio,
         portfolio_xray=portfolio_xray,
@@ -839,6 +855,11 @@ def api_search_suggest() -> Any:
         if q in sym.lower() or q in name.lower():
             if not any(m["symbol"] == sym for m in matches):
                 matches.append({"symbol": sym, "name": name, "type": "ETF", "category": "ETF"})
+
+    for sym, meta in KNOWN_CRYPTOS.items():
+        if q in sym.lower() or q in meta["name"].lower() or q in meta["category"].lower():
+            if not any(m["symbol"] == sym for m in matches):
+                matches.append({"symbol": sym, "name": meta["name"], "type": "Crypto", "category": meta["category"]})
 
     if len(matches) < 6:
         mf_results = search_mutual_funds(q, limit=6)

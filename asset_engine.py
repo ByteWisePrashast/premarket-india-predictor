@@ -57,6 +57,34 @@ KNOWN_ETFS: dict[str, str] = {
     "MOMENTUM50": "UTI Nifty200 Momentum 30 ETF",
 }
 
+# Curated High-Liquidity Global & Indian Cryptocurrencies
+KNOWN_CRYPTOS: dict[str, dict[str, str]] = {
+    "BTC": {"name": "Bitcoin (BTC)", "ticker": "BTC-USD", "category": "Digital Gold / Layer 1"},
+    "ETH": {"name": "Ethereum (ETH)", "ticker": "ETH-USD", "category": "Smart Contracts / Layer 1"},
+    "SOL": {"name": "Solana (SOL)", "ticker": "SOL-USD", "category": "High-Throughput Layer 1"},
+    "BNB": {"name": "Binance Coin (BNB)", "ticker": "BNB-USD", "category": "Exchange & Web3 Ecosystem"},
+    "XRP": {"name": "Ripple (XRP)", "ticker": "XRP-USD", "category": "Cross-Border Payments"},
+    "ADA": {"name": "Cardano (ADA)", "ticker": "ADA-USD", "category": "PoS Smart Contracts"},
+    "DOGE": {"name": "Dogecoin (DOGE)", "ticker": "DOGE-USD", "category": "Meme / Decentralized Payment"},
+    "AVAX": {"name": "Avalanche (AVAX)", "ticker": "AVAX-USD", "category": "Multi-Chain Network"},
+    "LINK": {"name": "Chainlink (LINK)", "ticker": "LINK-USD", "category": "Decentralized Oracle Network"},
+    "DOT": {"name": "Polkadot (DOT)", "ticker": "DOT-USD", "category": "Multi-Chain Interoperability"},
+}
+
+CRYPTO_SYNONYMS: dict[str, str] = {
+    "BITCOIN": "BTC",
+    "ETHEREUM": "ETH",
+    "SOLANA": "SOL",
+    "RIPPLE": "XRP",
+    "CARDANO": "ADA",
+    "DOGECOIN": "DOGE",
+    "AVALANCHE": "AVAX",
+    "CHAINLINK": "LINK",
+    "POLYGON": "POL",
+    "MATIC": "POL",
+    "BINANCE COIN": "BNB",
+}
+
 # Curated Popular Mutual Funds
 POPULAR_MF_MAP: dict[str, int] = {
     "parag parikh flexi cap": 122639,
@@ -115,6 +143,11 @@ POPULAR_SUGGESTIONS = [
     {"symbol": "MF_118778", "name": "Nippon India Small Cap Fund - Direct Growth", "type": "Mutual Fund", "category": "Small Cap"},
     {"symbol": "MF_118834", "name": "Mirae Asset Large Cap Fund - Direct Growth", "type": "Mutual Fund", "category": "Large Cap"},
     {"symbol": "MF_120716", "name": "UTI Nifty 50 Index Fund - Direct Growth", "type": "Mutual Fund", "category": "Index Fund"},
+    {"symbol": "BTC", "name": "Bitcoin (BTC)", "type": "Crypto", "category": "Digital Gold / Layer 1"},
+    {"symbol": "ETH", "name": "Ethereum (ETH)", "type": "Crypto", "category": "Smart Contracts / Layer 1"},
+    {"symbol": "SOL", "name": "Solana (SOL)", "type": "Crypto", "category": "Layer 1 Blockchain"},
+    {"symbol": "DOGE", "name": "Dogecoin (DOGE)", "type": "Crypto", "category": "Meme / Decentralized Payment"},
+    {"symbol": "XRP", "name": "Ripple (XRP)", "type": "Crypto", "category": "Cross-Border Payments"},
 ]
 
 
@@ -453,21 +486,48 @@ def analyze_stock_or_etf(raw_symbol: str, report: MarketReport | None = None, po
     symbol = raw_symbol.strip().upper()
     clean_sym = symbol.replace(".NS", "").replace(".BO", "")
 
-    is_etf = clean_sym in KNOWN_ETFS or "ETF" in clean_sym or "BEES" in clean_sym
-    asset_type = "ETF" if is_etf else "Stock"
+    # Check if cryptocurrency
+    crypto_token = CRYPTO_SYNONYMS.get(clean_sym, clean_sym)
+    is_crypto = (crypto_token in KNOWN_CRYPTOS) or clean_sym.endswith("-USD") or clean_sym.endswith("-INR") or "CRYPTO" in clean_sym or clean_sym in ("BTC", "ETH", "SOL", "BNB", "XRP", "DOGE", "ADA", "AVAX", "LINK", "MATIC", "POL")
+    is_etf = (not is_crypto) and (clean_sym in KNOWN_ETFS or "ETF" in clean_sym or "BEES" in clean_sym)
+    asset_type = "Crypto" if is_crypto else ("ETF" if is_etf else "Stock")
 
-    yf_symbol = f"{clean_sym}.NS"
-    ticker = yf.Ticker(yf_symbol)
-    
-    # auto_adjust=True guarantees proper adjustment for stock splits and bonus issues
-    history = ticker.history(period="2y", interval="1d", auto_adjust=True).dropna(subset=["Close"])
-
-    if history.empty:
-        yf_symbol = f"{clean_sym}.BO"
+    usdinr_rate = 1.0
+    if is_crypto:
+        yf_symbol = KNOWN_CRYPTOS.get(crypto_token, {}).get("ticker", f"{clean_sym}-USD" if not clean_sym.endswith("-USD") else clean_sym)
         ticker = yf.Ticker(yf_symbol)
         history = ticker.history(period="2y", interval="1d", auto_adjust=True).dropna(subset=["Close"])
+        try:
+            r = yf.Ticker("USDINR=X").history(period="5d", interval="1d")["Close"].dropna()
+            if not r.empty:
+                usdinr_rate = float(r.iloc[-1])
+        except Exception:
+            usdinr_rate = 86.5
         if history.empty:
-            return {"ok": False, "error": f"No market data found for '{raw_symbol}'. Try an NSE symbol like RELIANCE, TCS, NIFTYBEES, or GOLDBEES."}
+            return {"ok": False, "error": f"No crypto market data found for '{raw_symbol}'. Try top coins like BTC, ETH, SOL, XRP, DOGE, or BNB."}
+    else:
+        yf_symbol = f"{clean_sym}.NS"
+        ticker = yf.Ticker(yf_symbol)
+        
+        # auto_adjust=True guarantees proper adjustment for stock splits and bonus issues
+        history = ticker.history(period="2y", interval="1d", auto_adjust=True).dropna(subset=["Close"])
+
+        if history.empty:
+            yf_symbol = f"{clean_sym}.BO"
+            ticker = yf.Ticker(yf_symbol)
+            history = ticker.history(period="2y", interval="1d", auto_adjust=True).dropna(subset=["Close"])
+            if history.empty:
+                return {"ok": False, "error": f"No market data found for '{raw_symbol}'. Try an NSE symbol like RELIANCE, TCS, NIFTYBEES, GOLDBEES, or Crypto like BTC, ETH, SOL."}
+
+    raw_usd_last = float(history["Close"].iloc[-1]) if is_crypto else None
+
+    # Scale price data by usdinr_rate if Crypto so all technicals, targets, and stop losses are in INR
+    if is_crypto and usdinr_rate > 1.0:
+        history = history.copy()
+        history["Close"] = history["Close"] * usdinr_rate
+        history["Open"] = history["Open"] * usdinr_rate
+        history["High"] = history["High"] * usdinr_rate
+        history["Low"] = history["Low"] * usdinr_rate
 
     data_quality_warning = None
     latest_candle_time = history.index[-1]
@@ -719,7 +779,14 @@ def analyze_stock_or_etf(raw_symbol: str, report: MarketReport | None = None, po
         summary_verdict = f"Unfavorable setup (Calibrated win rate {calibrated_win_rate}%). Trading below key moving averages."
 
     chart_svg = make_svg_chart(close_series.tail(120).tolist())
-    name = info.get("longName") or info.get("shortName") or KNOWN_ETFS.get(clean_sym) or clean_sym
+    if is_crypto:
+        name = KNOWN_CRYPTOS.get(crypto_token, {}).get("name") or info.get("name") or f"{clean_sym} Crypto"
+        sector = "Cryptocurrency & Web3"
+        industry = KNOWN_CRYPTOS.get(crypto_token, {}).get("category", "Digital Asset / Layer 1")
+    else:
+        name = info.get("longName") or info.get("shortName") or KNOWN_ETFS.get(clean_sym) or clean_sym
+        sector = info.get("sector") or ("Index ETF" if is_etf else "N/A")
+        industry = info.get("industry") or ("Exchange Traded Fund" if is_etf else "N/A")
 
     return {
         "ok": True,
@@ -727,8 +794,9 @@ def analyze_stock_or_etf(raw_symbol: str, report: MarketReport | None = None, po
         "symbol": yf_symbol,
         "clean_symbol": clean_sym,
         "name": name,
-        "sector": info.get("sector") or ("Index ETF" if is_etf else "N/A"),
-        "industry": info.get("industry") or ("Exchange Traded Fund" if is_etf else "N/A"),
+        "sector": sector,
+        "industry": industry,
+        "price_usd": f"${raw_usd_last:,.2f}" if raw_usd_last is not None else None,
         "last_close": last_close,
         "display_last_close": fmt_curr(last_close),
         "prev_close": prev_close,
@@ -916,3 +984,103 @@ def make_svg_chart(values: list[float], width: int = 760, height: int = 200, is_
       <text x="8" y="{height - 22}" fill="#8e9eb5" font-size="11" font-family="Inter, sans-serif">Low: {fmt_curr(min_val)}</text>
       <text x="{width - 8}" y="{height - 22}" text-anchor="end" fill="{stroke_color}" font-weight="600" font-size="11" font-family="Inter, sans-serif">Latest: {fmt_curr(clean_vals[-1])}</text>
     </svg>"""
+
+
+# ============================================================================
+# CRYPTO WATCHLIST & 24/7 MOMENTUM FEED
+# ============================================================================
+
+_CACHED_CRYPTO_WATCHLIST: list[dict[str, Any]] = []
+_CACHED_CRYPTO_TIME: float = 0.0
+CRYPTO_CACHE_TTL: float = 90.0  # 90 seconds cache
+
+def get_top_crypto_watchlist() -> list[dict[str, Any]]:
+    """Fetches real-time 24/7 pricing, 24h & 7D trends, and quantitative signals for top cryptocurrencies."""
+    global _CACHED_CRYPTO_WATCHLIST, _CACHED_CRYPTO_TIME
+    now = datetime.now().timestamp()
+    if _CACHED_CRYPTO_WATCHLIST and (now - _CACHED_CRYPTO_TIME) < CRYPTO_CACHE_TTL:
+        return _CACHED_CRYPTO_WATCHLIST
+
+    try:
+        crypto_tickers = [v["ticker"] for v in KNOWN_CRYPTOS.values()]
+        download_list = crypto_tickers + ["USDINR=X"]
+        data = yf.download(download_list, period="7d", interval="1d", progress=False)["Close"]
+        
+        usdinr = float(data["USDINR=X"].dropna().iloc[-1]) if "USDINR=X" in data else 86.5
+        
+        results = []
+        for key, meta in KNOWN_CRYPTOS.items():
+            tk = meta["ticker"]
+            if tk in data:
+                s = data[tk].dropna()
+                if len(s) >= 2:
+                    p_usd = float(s.iloc[-1])
+                    p_inr = p_usd * usdinr
+                    prev_p = float(s.iloc[-2])
+                    chg_pct = ((s.iloc[-1] - prev_p) / prev_p) * 100.0 if prev_p else 0.0
+                    
+                    p_7d = float(s.iloc[0])
+                    chg_7d = ((s.iloc[-1] - p_7d) / p_7d) * 100.0 if p_7d else 0.0
+
+                    mom_score = clamp(50.0 + (chg_pct * 3.5) + (chg_7d * 1.2), 15.0, 95.0)
+                    
+                    if mom_score >= 75:
+                        signal = "Strong Buy"
+                        badge = "strong-buy"
+                        action = "Accumulate DCA"
+                    elif mom_score >= 60:
+                        signal = "Buy on Dips"
+                        badge = "buy"
+                        action = "Buy on Dips"
+                    elif mom_score >= 45:
+                        signal = "Neutral / Hold"
+                        badge = "hold"
+                        action = "Hold Core"
+                    else:
+                        signal = "Avoid / High Risk"
+                        badge = "avoid"
+                        action = "Wait for Base"
+
+                    results.append({
+                        "symbol": key,
+                        "ticker": tk,
+                        "name": meta["name"],
+                        "category": meta["category"],
+                        "price_usd": f"${p_usd:,.2f}" if p_usd >= 1.0 else f"${p_usd:.4f}",
+                        "price_inr": fmt_curr(p_inr),
+                        "price_inr_raw": p_inr,
+                        "day_change_pct": fmt_pct(chg_pct),
+                        "day_change_raw": chg_pct,
+                        "trend_7d": fmt_pct(chg_7d),
+                        "trend_7d_raw": chg_7d,
+                        "momentum_score": round(mom_score, 1),
+                        "signal": signal,
+                        "badge": badge,
+                        "action": action,
+                        "target_price": fmt_curr(p_inr * (1.0 + max(0.04, abs(chg_pct) * 0.015))),
+                        "stop_loss": fmt_curr(p_inr * 0.92),
+                        "asset_type": "Crypto",
+                    })
+
+        results.sort(key=lambda x: x["momentum_score"], reverse=True)
+        if results:
+            _CACHED_CRYPTO_WATCHLIST = results
+            _CACHED_CRYPTO_TIME = now
+            return results
+    except Exception as e:
+        print(f"Error downloading crypto watchlist: {e}")
+
+    return _build_fallback_crypto_watchlist()
+
+
+def _build_fallback_crypto_watchlist() -> list[dict[str, Any]]:
+    """Fallback static crypto watchlist if network is temporarily unreachable."""
+    fallback_items = [
+        {"symbol": "BTC", "name": "Bitcoin (BTC)", "category": "Digital Gold / Layer 1", "price_usd": "$63,000.00", "price_inr": "₹54,49,500.00", "price_inr_raw": 5449500.0, "day_change_pct": "+2.40%", "day_change_raw": 2.4, "trend_7d": "+5.80%", "trend_7d_raw": 5.8, "momentum_score": 78.5, "signal": "Strong Buy", "badge": "strong-buy", "action": "Accumulate DCA", "target_price": "₹57,50,000.00", "stop_loss": "₹51,00,000.00", "asset_type": "Crypto"},
+        {"symbol": "ETH", "name": "Ethereum (ETH)", "category": "Smart Contracts / Layer 1", "price_usd": "$2,650.00", "price_inr": "₹2,29,225.00", "price_inr_raw": 229225.0, "day_change_pct": "+1.85%", "day_change_raw": 1.85, "trend_7d": "+4.20%", "trend_7d_raw": 4.2, "momentum_score": 72.0, "signal": "Buy on Dips", "badge": "buy", "action": "Buy on Dips", "target_price": "₹2,42,000.00", "stop_loss": "₹2,14,000.00", "asset_type": "Crypto"},
+        {"symbol": "SOL", "name": "Solana (SOL)", "category": "High-Throughput Layer 1", "price_usd": "$145.00", "price_inr": "₹12,542.50", "price_inr_raw": 12542.5, "day_change_pct": "+4.20%", "day_change_raw": 4.2, "trend_7d": "+12.40%", "trend_7d_raw": 12.4, "momentum_score": 84.0, "signal": "Strong Buy", "badge": "strong-buy", "action": "Accumulate DCA", "target_price": "₹13,800.00", "stop_loss": "₹11,500.00", "asset_type": "Crypto"},
+        {"symbol": "BNB", "name": "Binance Coin (BNB)", "category": "Exchange & Web3 Ecosystem", "price_usd": "$580.00", "price_inr": "₹50,170.00", "price_inr_raw": 50170.0, "day_change_pct": "+0.60%", "day_change_raw": 0.6, "trend_7d": "+1.90%", "trend_7d_raw": 1.9, "momentum_score": 62.0, "signal": "Buy on Dips", "badge": "buy", "action": "Buy on Dips", "target_price": "₹52,800.00", "stop_loss": "₹46,500.00", "asset_type": "Crypto"},
+        {"symbol": "XRP", "name": "Ripple (XRP)", "category": "Cross-Border Payments", "price_usd": "$0.58", "price_inr": "₹50.17", "price_inr_raw": 50.17, "day_change_pct": "-0.40%", "day_change_raw": -0.4, "trend_7d": "-1.20%", "trend_7d_raw": -1.2, "momentum_score": 48.0, "signal": "Neutral / Hold", "badge": "hold", "action": "Hold Core", "target_price": "₹53.00", "stop_loss": "₹46.00", "asset_type": "Crypto"},
+        {"symbol": "DOGE", "name": "Dogecoin (DOGE)", "category": "Meme / Decentralized Payment", "price_usd": "$0.10", "price_inr": "₹8.65", "price_inr_raw": 8.65, "day_change_pct": "+1.20%", "day_change_raw": 1.2, "trend_7d": "+3.40%", "trend_7d_raw": 3.4, "momentum_score": 58.0, "signal": "Neutral / Hold", "badge": "hold", "action": "Speculative / Light", "target_price": "₹9.20", "stop_loss": "₹7.90", "asset_type": "Crypto"},
+    ]
+    return fallback_items

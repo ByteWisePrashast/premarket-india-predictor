@@ -95,6 +95,21 @@ ASSET_KNOWLEDGE_BASE: dict[str, dict[str, Any]] = {
     "TATA_DIGITAL_INDIA": {"name": "Tata Digital India Fund", "sector": "Information Technology", "cap": "Large Cap", "beta": 1.15, "er": 0.90, "cagr_2y": 16.8, "vol": 20.5, "covid_dd": -26.0, "top_holdings": ["TCS.NS", "INFY.NS", "HCLTECH.NS", "TECHM.NS", "WIPRO.NS", "PERSISTENT.NS", "COFORGE.NS"]},
     "MOTILAL_MIDCAP": {"name": "Motilal Oswal Midcap Fund", "sector": "Diversified / Commodities / Cash", "cap": "Mid Cap", "beta": 1.18, "er": 0.68, "cagr_2y": 38.5, "vol": 18.0, "covid_dd": -31.0, "top_holdings": ["JIOFIN.NS", "ZOMATO.NS", "DIXON.NS", "PERSISTENT.NS", "KALYANKJIL.NS", "TRENT.NS"]},
     "BANDHAN_STERLING_VALUE": {"name": "Bandhan Sterling Value Fund", "sector": "Diversified / Commodities / Cash", "cap": "Multi Cap", "beta": 0.95, "er": 0.78, "cagr_2y": 22.4, "vol": 15.2, "covid_dd": -33.5, "top_holdings": ["ICICIBANK.NS", "AXISBANK.NS", "HDFCBANK.NS", "CGPOWER.NS", "JINDALSTEL.NS", "NTPC.NS"]},
+
+    # Cryptocurrencies & Web3 Assets
+    "BTC-USD": {"name": "Bitcoin (BTC)", "sector": "Cryptocurrency & Web3", "cap": "Digital Store of Value", "beta": 1.85, "er": 0.0, "cagr_2y": 48.0, "vol": 52.0, "covid_dd": -52.0, "top_holdings": ["BITCOIN_NETWORK"]},
+    "BTC": {"name": "Bitcoin (BTC)", "sector": "Cryptocurrency & Web3", "cap": "Digital Store of Value", "beta": 1.85, "er": 0.0, "cagr_2y": 48.0, "vol": 52.0, "covid_dd": -52.0, "top_holdings": ["BITCOIN_NETWORK"]},
+    "ETH-USD": {"name": "Ethereum (ETH)", "sector": "Cryptocurrency & Web3", "cap": "Smart Contracts / Layer 1", "beta": 2.10, "er": 0.0, "cagr_2y": 36.0, "vol": 64.0, "covid_dd": -60.0, "top_holdings": ["ETHEREUM_NETWORK"]},
+    "ETH": {"name": "Ethereum (ETH)", "sector": "Cryptocurrency & Web3", "cap": "Smart Contracts / Layer 1", "beta": 2.10, "er": 0.0, "cagr_2y": 36.0, "vol": 64.0, "covid_dd": -60.0, "top_holdings": ["ETHEREUM_NETWORK"]},
+    "SOL-USD": {"name": "Solana (SOL)", "sector": "Cryptocurrency & Web3", "cap": "High-Throughput Layer 1", "beta": 2.60, "er": 0.0, "cagr_2y": 72.0, "vol": 85.0, "covid_dd": -85.0, "top_holdings": ["SOLANA_NETWORK"]},
+    "SOL": {"name": "Solana (SOL)", "sector": "Cryptocurrency & Web3", "cap": "High-Throughput Layer 1", "beta": 2.60, "er": 0.0, "cagr_2y": 72.0, "vol": 85.0, "covid_dd": -85.0, "top_holdings": ["SOLANA_NETWORK"]},
+    "BNB-USD": {"name": "Binance Coin (BNB)", "sector": "Cryptocurrency & Web3", "cap": "Exchange & Web3 Ecosystem", "beta": 1.75, "er": 0.0, "cagr_2y": 28.0, "vol": 58.0, "covid_dd": -55.0, "top_holdings": ["BNB_CHAIN"]},
+    "XRP-USD": {"name": "Ripple (XRP)", "sector": "Cryptocurrency & Web3", "cap": "Cross-Border Payments", "beta": 2.20, "er": 0.0, "cagr_2y": 18.0, "vol": 78.0, "covid_dd": -65.0, "top_holdings": ["XRPL_LEDGER"]},
+    "DOGE-USD": {"name": "Dogecoin (DOGE)", "sector": "Cryptocurrency & Web3", "cap": "Meme / Speculative", "beta": 3.10, "er": 0.0, "cagr_2y": 22.0, "vol": 95.0, "covid_dd": -88.0, "top_holdings": ["DOGE_NETWORK"]},
+    "ADA-USD": {"name": "Cardano (ADA)", "sector": "Cryptocurrency & Web3", "cap": "Layer 1 Blockchain", "beta": 2.30, "er": 0.0, "cagr_2y": 15.0, "vol": 75.0, "covid_dd": -70.0, "top_holdings": ["CARDANO_NETWORK"]},
+    "AVAX-USD": {"name": "Avalanche (AVAX)", "sector": "Cryptocurrency & Web3", "cap": "Multi-Chain Network", "beta": 2.45, "er": 0.0, "cagr_2y": 32.0, "vol": 80.0, "covid_dd": -80.0, "top_holdings": ["AVALANCHE_SUBNETS"]},
+    "LINK-USD": {"name": "Chainlink (LINK)", "sector": "Cryptocurrency & Web3", "cap": "Oracle Network", "beta": 2.15, "er": 0.0, "cagr_2y": 38.0, "vol": 70.0, "covid_dd": -68.0, "top_holdings": ["CHAINLINK_ORACLES"]},
+    "MATIC-USD": {"name": "Polygon (MATIC)", "sector": "Cryptocurrency & Web3", "cap": "Layer 2 Scaling", "beta": 2.50, "er": 0.0, "cagr_2y": 12.0, "vol": 82.0, "covid_dd": -78.0, "top_holdings": ["POLYGON_POS"]},
 }
 
 # Recognition catalog for statement text matching
@@ -140,6 +155,18 @@ RECOGNITION_CATALOG = [
     {"patterns": ["POLYCAB", "POLYCAB INDIA"], "symbol": "POLYCAB.NS", "name": "Polycab India", "type": "Stock", "category": "Engineering", "default_er": 0.0},
     {"patterns": ["KAYNES", "KAYNES TECH"], "symbol": "KAYNES.NS", "name": "Kaynes Technology", "type": "Stock", "category": "Capital Goods", "default_er": 0.0},
     {"patterns": ["SUZLON", "SUZLON ENERGY"], "symbol": "SUZLON.NS", "name": "Suzlon Energy", "type": "Stock", "category": "Power & Energy", "default_er": 0.0},
+
+    # Cryptocurrencies & Web3 Wallets (CoinDCX, WazirX, CoinSwitch, Binance, KuCoin, Metamask)
+    {"patterns": ["BITCOIN", "BTC", "BTC-USD", "COINDCX BITCOIN"], "symbol": "BTC-USD", "name": "Bitcoin (BTC)", "type": "Crypto", "category": "Digital Store of Value", "default_er": 0.0},
+    {"patterns": ["ETHEREUM", "ETH", "ETH-USD", "COINDCX ETH", "ETHER"], "symbol": "ETH-USD", "name": "Ethereum (ETH)", "type": "Crypto", "category": "Smart Contracts / Layer 1", "default_er": 0.0},
+    {"patterns": ["SOLANA", "SOL", "SOL-USD"], "symbol": "SOL-USD", "name": "Solana (SOL)", "type": "Crypto", "category": "High-Throughput Layer 1", "default_er": 0.0},
+    {"patterns": ["BINANCE COIN", "BNB", "BNB-USD", "BINANCE"], "symbol": "BNB-USD", "name": "Binance Coin (BNB)", "type": "Crypto", "category": "Exchange & Web3 Ecosystem", "default_er": 0.0},
+    {"patterns": ["RIPPLE", "XRP", "XRP-USD"], "symbol": "XRP-USD", "name": "Ripple (XRP)", "type": "Crypto", "category": "Cross-Border Payments", "default_er": 0.0},
+    {"patterns": ["DOGECOIN", "DOGE", "DOGE-USD"], "symbol": "DOGE-USD", "name": "Dogecoin (DOGE)", "type": "Crypto", "category": "Meme / Speculative", "default_er": 0.0},
+    {"patterns": ["CARDANO", "ADA", "ADA-USD"], "symbol": "ADA-USD", "name": "Cardano (ADA)", "type": "Crypto", "category": "Layer 1 Blockchain", "default_er": 0.0},
+    {"patterns": ["AVALANCHE", "AVAX", "AVAX-USD"], "symbol": "AVAX-USD", "name": "Avalanche (AVAX)", "type": "Crypto", "category": "Multi-Chain Network", "default_er": 0.0},
+    {"patterns": ["CHAINLINK", "LINK", "LINK-USD"], "symbol": "LINK-USD", "name": "Chainlink (LINK)", "type": "Crypto", "category": "Oracle Network", "default_er": 0.0},
+    {"patterns": ["POLYGON", "MATIC", "POLYGON MATIC", "MATIC-USD"], "symbol": "MATIC-USD", "name": "Polygon (MATIC)", "type": "Crypto", "category": "Layer 2 Scaling", "default_er": 0.0},
 ]
 
 
@@ -164,25 +191,32 @@ def parse_portfolio_screenshot_text(raw_text: str) -> list[dict[str, Any]]:
         matched_line_idx = -1
 
         for pat in cat["patterns"]:
-            # Check full text search or line-by-line search
+            # Check line-by-line search with word boundary for short patterns
             for idx, line in enumerate(lines):
-                if pat in line.upper():
-                    matched = True
-                    matched_line_idx = idx
-                    break
+                line_u = line.upper()
+                if len(pat) <= 4:
+                    if re.search(r'\b' + re.escape(pat) + r'\b', line_u):
+                        matched = True
+                        matched_line_idx = idx
+                        break
+                else:
+                    if pat in line_u:
+                        matched = True
+                        matched_line_idx = idx
+                        break
             if matched:
                 break
 
         if matched and cat["symbol"] not in seen_symbols:
             seen_symbols.add(cat["symbol"])
             
-            # Search nearby lines for monetary amounts (e.g. ₹54,200 or 1,25,000 or 45000)
+            # Search matched line first, then nearby lines for monetary amounts
             extracted_val = 0.0
-            search_window = lines[max(0, matched_line_idx - 1) : min(len(lines), matched_line_idx + 4)]
+            search_window = [lines[matched_line_idx]] + lines[max(0, matched_line_idx - 1) : min(len(lines), matched_line_idx + 3)]
             joined_window = " ".join(search_window)
 
             # Find currency amounts (e.g., ₹ 1,45,230.50 or 50,000 or 12345)
-            amt_matches = re.findall(r'(?:₹|INR|RS\.?)?\s*([0-9]{1,3}(?:,[0-9]{2,3})*(?:\.[0-9]{1,2})?)', joined_window)
+            amt_matches = re.findall(r'(?:₹|INR|RS\.?|\$)?\s*([0-9]{1,3}(?:,[0-9]{2,3})*(?:\.[0-9]{1,2})?)', joined_window)
             
             for m in amt_matches:
                 cleaned = m.replace(",", "").strip()
@@ -404,7 +438,89 @@ def generate_asset_action_decisions(
                 })
 
         # -------------------------------------------------------------
-        # 3. DIRECT STOCK DECISION LOGIC
+        # 3. CRYPTO & WEB3 DECISION LOGIC
+        # -------------------------------------------------------------
+        elif asset_type == "Crypto" or "-USD" in sym or sym in ("BTC", "ETH", "SOL", "BNB", "XRP", "DOGE", "ADA", "AVAX", "LINK", "MATIC") or "BITCOIN" in name.upper() or "ETHEREUM" in name.upper() or "SOLANA" in name.upper():
+            # Rule A: Excessive Crypto Allocation (> 10% or > 5% on Conservative) -> TRIM / DE-RISK
+            if (weight_pct > 10.0 and "aggressive" not in risk) or (weight_pct > 5.0 and "conservative" in risk):
+                excess_val = ((weight_pct - 5.0) / 100.0) * total_val
+                decisions.append({
+                    "symbol": sym,
+                    "name": name,
+                    "asset_type": "Crypto",
+                    "category": cap,
+                    "weight_pct": f"{weight_pct:.1f}%",
+                    "position_value": fmt_curr(pos_val),
+                    "action": "Trim / De-Risk",
+                    "action_code": "reallocate",
+                    "action_badge": "score-badge-low",
+                    "action_icon": "⚖️",
+                    "headline": f"Extreme Speculative Crypto Exposure ({weight_pct:.1f}%)",
+                    "rationale": f"Cryptocurrency carries 70%–85% cyclical drawdown risk. Trim ~₹{excess_val:,.0f} and lock profits into low-cost index funds or gold to protect capital.",
+                    "switch_alternative": "Reallocate into NIFTYBEES ETF or GOLDBEES (Safe Hedge)",
+                    "annual_savings": "Caps Crypto Winter Drawdown",
+                    "alpha_status": "High Volatility Speculative",
+                })
+            # Rule B: Conservative Risk Mismatch -> EXIT SPECULATIVE ASSET
+            elif "conservative" in risk:
+                decisions.append({
+                    "symbol": sym,
+                    "name": name,
+                    "asset_type": "Crypto",
+                    "category": cap,
+                    "weight_pct": f"{weight_pct:.1f}%",
+                    "position_value": fmt_curr(pos_val),
+                    "action": "Exit / Cut Speculative Risk",
+                    "action_code": "exit",
+                    "action_badge": "score-badge-low",
+                    "action_icon": "🔴",
+                    "headline": "High-Beta Crypto Incompatible with Conservative Profile",
+                    "rationale": "Crypto assets exhibit annualized volatility of 60%–95%. Conservative goal requires capital preservation over asymmetric upside.",
+                    "switch_alternative": "Large Cap Bluechips or Sovereign Gold Bonds / GOLDBEES",
+                    "annual_savings": "Capital Preservation",
+                    "alpha_status": "Excessive Volatility Mismatch",
+                })
+            # Rule C: Core Bluechip (BTC / ETH / SOL) with Safe Allocation (< 8%) -> ACCUMULATE DCA
+            elif sym in ("BTC-USD", "BTC", "ETH-USD", "ETH", "SOL-USD", "SOL") or "BITCOIN" in name.upper() or "ETHEREUM" in name.upper():
+                decisions.append({
+                    "symbol": sym,
+                    "name": name,
+                    "asset_type": "Crypto",
+                    "category": cap,
+                    "weight_pct": f"{weight_pct:.1f}%",
+                    "position_value": fmt_curr(pos_val),
+                    "action": "Accumulate DCA / Buy Dips",
+                    "action_code": "step_up",
+                    "action_badge": "score-badge-high",
+                    "action_icon": "🚀",
+                    "headline": "Tier-1 Layer-1 Digital Asset (Optimal <5% Size)",
+                    "rationale": f"Holding is well-sized within the 3%–7% speculative allocation budget. Use systematic Dollar-Cost Averaging (DCA) on macro cycle dips.",
+                    "switch_alternative": "Maintain & DCA on Macro Dips",
+                    "annual_savings": "Asymmetric High-Beta Growth",
+                    "alpha_status": "Tier-1 Web3 Compounder",
+                })
+            # Rule D: Balanced Altcoin / Standard Crypto -> HOLD CORE
+            else:
+                decisions.append({
+                    "symbol": sym,
+                    "name": name,
+                    "asset_type": "Crypto",
+                    "category": cap,
+                    "weight_pct": f"{weight_pct:.1f}%",
+                    "position_value": fmt_curr(pos_val),
+                    "action": "Hold Core Web3",
+                    "action_code": "continue",
+                    "action_badge": "score-badge-good",
+                    "action_icon": "🟢",
+                    "headline": "Speculative Growth Allocation",
+                    "rationale": "Position size is moderate. Maintain position with strict trailing stop loss / profit-taking rules.",
+                    "switch_alternative": "Hold with trailing stop loss",
+                    "annual_savings": "Controlled Sizing",
+                    "alpha_status": "High Beta Altcoin",
+                })
+
+        # -------------------------------------------------------------
+        # 4. DIRECT STOCK DECISION LOGIC
         # -------------------------------------------------------------
         else:
             if weight_pct > 15.0 and not bool(h.get("is_conviction_bet")):
@@ -495,7 +611,19 @@ def lookup_asset_meta(symbol: str, asset_type: str = "Stock") -> dict[str, Any]:
         return ASSET_KNOWLEDGE_BASE[with_ns]
 
     # Dynamic classification fallback
-    if "ETF" in sym_clean or "BEES" in sym_clean or asset_type == "ETF":
+    if asset_type == "Crypto" or sym_clean.endswith("-USD") or sym_clean in ("BTC", "ETH", "SOL", "BNB", "XRP", "DOGE", "ADA", "AVAX", "LINK", "MATIC"):
+        return {
+            "name": sym_clean,
+            "sector": "Cryptocurrency & Web3",
+            "cap": "Digital Asset / Layer 1",
+            "beta": 2.10,
+            "er": 0.0,
+            "cagr_2y": 35.0,
+            "vol": 65.0,
+            "covid_dd": -65.0,
+            "top_holdings": ["CRYPTO_NETWORK"],
+        }
+    elif "ETF" in sym_clean or "BEES" in sym_clean or asset_type == "ETF":
         return {
             "name": sym_clean,
             "sector": "Diversified / Commodities / Cash",

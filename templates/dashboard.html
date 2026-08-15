@@ -488,6 +488,64 @@
               </table>
             </div>
           </div>
+
+          <!-- 🪙 TOP CRYPTOCURRENCIES & WEB3 SETUPS (24/7 MOMENTUM) -->
+          <div class="daily-picks-block" id="dpBlockCrypto" style="margin-top: 24px;">
+            <div class="dp-block-header crypto-header">
+              <div class="dp-bh-title">
+                <span class="dp-icon">🪙</span>
+                <div>
+                  <h3>Top Cryptocurrencies & Web3 Setups (24/7 Momentum)</h3>
+                  <span class="dp-sub">Real-time USD & INR valuation, 7D momentum trends, and risk guardrails</span>
+                </div>
+              </div>
+              <span class="badge-type crypto">24/7 Web3</span>
+            </div>
+
+            <div class="table-responsive">
+              <table class="watchlist-table">
+                <thead>
+                  <tr>
+                    <th>Token</th>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>Price (INR / USD)</th>
+                    <th>24h Change</th>
+                    <th>7D Trend</th>
+                    <th>Score</th>
+                    <th>Signal / Action</th>
+                    <th>Trade / DCA</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for c in crypto_watchlist %}
+                    <tr>
+                      <td><a href="/?symbol={{ c.symbol }}" class="asset-link"><strong>{{ c.symbol }}</strong></a></td>
+                      <td>{{ c.name }}</td>
+                      <td><span class="cat-pill cat-crypto">{{ c.category }}</span></td>
+                      <td class="font-mono">
+                        <strong>{{ c.price_inr }}</strong>
+                        <span class="font-xs" style="color: var(--text-dim); display: block;">{{ c.price_usd }}</span>
+                      </td>
+                      <td class="{{ 'positive' if '+' in c.day_change_pct else 'negative' }} font-mono"><strong>{{ c.day_change_pct }}</strong></td>
+                      <td class="{{ 'positive' if '+' in c.trend_7d else 'negative' }} font-mono"><strong>{{ c.trend_7d }}</strong></td>
+                      <td>
+                        <span class="score-badge {% if c.momentum_score >= 75 %}score-badge-high{% elif c.momentum_score >= 60 %}score-badge-good{% elif c.momentum_score >= 45 %}score-badge-neutral{% else %}score-badge-low{% endif %}">
+                          {{ c.momentum_score }}
+                        </span>
+                      </td>
+                      <td><span class="action-tag action-{{ c.badge }}">{{ c.action }}</span></td>
+                      <td>
+                        <button type="button" class="btn btn-buy-crypto btn-sm" onclick="openBuyModal('{{ c.symbol }}', '{{ c.name }}', 'Crypto', {{ c.price_inr_raw }}, 1, {{ c.price_inr_raw * 0.92 }}, {{ c.price_inr_raw * 1.08 }}, {{ c.price_inr_raw * 1.15 }})">
+                          Buy / DCA
+                        </button>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </section>
       </div>
 
@@ -1650,6 +1708,7 @@
               <div class="scanner-quick-samples">
                 <span class="sample-label">Try Sample:</span>
                 <button type="button" class="btn btn-sample-chip" onclick="loadSampleStatement('mf')">🏦 Mutual Funds Basket</button>
+                <button type="button" class="btn btn-sample-chip" onclick="loadSampleStatement('crypto')">🪙 Crypto Wallet</button>
                 <button type="button" class="btn btn-sample-chip" onclick="loadSampleStatement('mixed')">📊 Mixed Portfolio</button>
               </div>
             </div>
@@ -1827,12 +1886,13 @@
                 <button type="button" class="btn-planner-sub active" id="filterTabAll" onclick="filterAssetDecisions('all')">🌟 All Assets (<span id="countDecisionsAll">{{ portfolio_xray.asset_decisions|length }}</span>)</button>
                 <button type="button" class="btn-planner-sub" id="filterTabMf" onclick="filterAssetDecisions('mf')">🏦 Mutual Funds</button>
                 <button type="button" class="btn-planner-sub" id="filterTabStock" onclick="filterAssetDecisions('stock')">📈 Stocks & ETFs</button>
+                <button type="button" class="btn-planner-sub" id="filterTabCrypto" onclick="filterAssetDecisions('crypto')">🪙 Crypto & Web3</button>
               </div>
             </div>
 
             <div class="asset-decisions-grid" id="assetDecisionsContainer">
               {% for ad in portfolio_xray.asset_decisions %}
-                <div class="asset-decision-card card-action-{{ ad.action_code }}" data-type="{{ 'mf' if ad.asset_type == 'Mutual Fund' else 'stock' }}">
+                <div class="asset-decision-card card-action-{{ ad.action_code }}" data-type="{{ 'mf' if ad.asset_type == 'Mutual Fund' else ('crypto' if ad.asset_type == 'Crypto' else 'stock') }}">
                   <div class="adc-top">
                     <div class="adc-asset-info">
                       <span class="adc-name">{{ ad.name }}</span>
@@ -2679,17 +2739,26 @@
         const cards = document.querySelectorAll('.asset-decision-card');
         
         if (filter === 'all') {
-          document.getElementById('filterTabAll').classList.add('active');
+          const tab = document.getElementById('filterTabAll');
+          if (tab) tab.classList.add('active');
           cards.forEach(c => c.style.display = 'flex');
         } else if (filter === 'mf') {
-          document.getElementById('filterTabMf').classList.add('active');
+          const tab = document.getElementById('filterTabMf');
+          if (tab) tab.classList.add('active');
           cards.forEach(c => {
             c.style.display = (c.getAttribute('data-type') === 'mf') ? 'flex' : 'none';
           });
-        } else if (filter === 'stock') {
-          document.getElementById('filterTabStock').classList.add('active');
+        } else if (filter === 'crypto') {
+          const tab = document.getElementById('filterTabCrypto');
+          if (tab) tab.classList.add('active');
           cards.forEach(c => {
-            c.style.display = (c.getAttribute('data-type') === 'stock') ? 'flex' : 'none';
+            c.style.display = (c.getAttribute('data-type') === 'crypto') ? 'flex' : 'none';
+          });
+        } else if (filter === 'stock') {
+          const tab = document.getElementById('filterTabStock');
+          if (tab) tab.classList.add('active');
+          cards.forEach(c => {
+            c.style.display = (c.getAttribute('data-type') === 'stock' || c.getAttribute('data-type') === 'etf') ? 'flex' : 'none';
           });
         }
       }
@@ -2810,6 +2879,8 @@
         let sample = "";
         if (type === 'mf') {
           sample = "Groww Mutual Funds:\n1. Parag Parikh Flexi Cap Fund Direct Growth: ₹ 1,45,000\n2. HDFC Top 100 Fund Regular Plan: ₹ 85,000\n3. Nippon India Small Cap Fund: ₹ 65,000\n4. ICICI Prudential Value Discovery: ₹ 95,000\n5. Axis Small Cap Fund: ₹ 55,000";
+        } else if (type === 'crypto') {
+          sample = "CoinDCX / Binance Portfolio:\n1. Bitcoin (BTC): ₹ 2,50,000\n2. Ethereum (ETH): ₹ 1,20,000\n3. Solana (SOL): ₹ 80,000\n4. Dogecoin (DOGE): ₹ 35,000\n5. Parag Parikh Flexi Cap Fund: ₹ 2,00,000";
         } else {
           sample = "Zerodha Kite Portfolio:\nReliance Industries ₹ 1,20,000\nTata Consultancy Services ₹ 85,000\nNippon India Nifty 50 ETF (NIFTYBEES) ₹ 95,000\nParag Parikh Flexi Cap Fund ₹ 1,50,000\nHDFC Bank ₹ 90,000";
         }
@@ -2858,6 +2929,7 @@
                 <option value="Mutual Fund" ${h.asset_type === 'Mutual Fund' ? 'selected' : ''}>Mutual Fund</option>
                 <option value="Stock" ${h.asset_type === 'Stock' ? 'selected' : ''}>Stock</option>
                 <option value="ETF" ${h.asset_type === 'ETF' ? 'selected' : ''}>ETF</option>
+                <option value="Crypto" ${h.asset_type === 'Crypto' ? 'selected' : ''}>Crypto</option>
               </select>
             </td>
             <td><input type="number" class="table-edit-input font-mono" value="${Math.round(h.value)}" data-field="value"></td>
@@ -2876,6 +2948,7 @@
               <option value="Mutual Fund">Mutual Fund</option>
               <option value="Stock">Stock</option>
               <option value="ETF">ETF</option>
+              <option value="Crypto">Crypto</option>
             </select>
           </td>
           <td><input type="number" class="table-edit-input font-mono" value="50000" data-field="value"></td>
@@ -3007,7 +3080,7 @@
         if (countAll) countAll.textContent = decisions.length;
 
         container.innerHTML = decisions.map(ad => `
-          <div class="asset-decision-card card-action-${ad.action_code}" data-type="${ad.asset_type === 'Mutual Fund' ? 'mf' : 'stock'}">
+          <div class="asset-decision-card card-action-${ad.action_code}" data-type="${ad.asset_type === 'Mutual Fund' ? 'mf' : (ad.asset_type === 'Crypto' ? 'crypto' : 'stock')}">
             <div class="adc-top">
               <div class="adc-asset-info">
                 <span class="adc-name">${ad.name}</span>
