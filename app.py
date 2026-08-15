@@ -42,7 +42,11 @@ from portfolio_planner import (
     generate_sip_plan,
     get_daily_top_picks,
 )
-from portfolio_health_engine import audit_portfolio_system
+from portfolio_health_engine import (
+    audit_portfolio_system,
+    generate_asset_action_decisions,
+    parse_portfolio_screenshot_text,
+)
 from premarket_predictor import DataPoint, MarketReport, build_report, clamp, signed_score
 from risk_engine import calculate_transaction_friction, check_portfolio_risk_guardrails, check_volatility_regime
 
@@ -1027,6 +1031,48 @@ def api_toggle_conviction_bet() -> Any:
     if symbol:
         set_conviction_bet(symbol, is_conviction)
     return jsonify({"ok": True, "symbol": symbol, "is_conviction_bet": is_conviction})
+
+
+@app.post("/api/portfolio/scan-screenshot")
+def api_scan_portfolio_screenshot() -> Any:
+    """
+    Receives raw OCR extracted text or statement text, detects holdings, 
+    and generates full asset-by-asset decision matrix and X-Ray audit.
+    """
+    data = request.get_json(silent=True) or request.form or {}
+    raw_text = str(data.get("raw_text") or data.get("text") or "").strip()
+    horizon = str(data.get("horizon") or "long").lower()
+    risk = str(data.get("risk") or "moderate").lower()
+    goal = str(data.get("goal") or "wealth_creation").lower()
+
+    detected_items = parse_portfolio_screenshot_text(raw_text)
+    
+    # Generate per-asset decision advice
+    asset_decisions = generate_asset_action_decisions(
+        holdings=detected_items,
+        user_profile={
+            "time_horizon": horizon,
+            "risk_profile": risk,
+            "primary_goal": goal,
+        },
+    )
+
+    # Run full system X-Ray
+    xray = audit_portfolio_system(
+        holdings=detected_items,
+        cash_balance=0.0,
+        time_horizon=horizon,
+        risk_profile=risk,
+        primary_goal=goal,
+    )
+
+    return jsonify({
+        "ok": True,
+        "detected_count": len(detected_items),
+        "detected_holdings": detected_items,
+        "asset_decisions": asset_decisions,
+        "xray": xray,
+    })
 
 
 if __name__ == "__main__":
