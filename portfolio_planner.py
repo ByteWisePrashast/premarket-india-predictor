@@ -682,7 +682,7 @@ def get_daily_top_picks() -> dict[str, Any]:
             "badge": "avoid",
             "resistance": "₹2,890.00",
             "support": "₹2,760.00",
-            "action": "Avoid Fresh Longs",
+            "action": "⛔ Avoid Fresh Longs",
             "rationale": "Crude price inflation pressure + intensifying new entrant competition squeezing margins.",
         },
         {
@@ -697,7 +697,7 @@ def get_daily_top_picks() -> dict[str, Any]:
             "badge": "avoid",
             "resistance": "₹1,415.00",
             "support": "₹1,340.00",
-            "action": "Wait for Base",
+            "action": "⏳ Wait for Base / Dip",
             "rationale": "Microfinance stress headwinds and rejection at 50-day moving average.",
         },
         {
@@ -712,7 +712,7 @@ def get_daily_top_picks() -> dict[str, Any]:
             "badge": "hold",
             "resistance": "₹9,350.00",
             "support": "₹8,900.00",
-            "action": "Hold Existing / No New Entry",
+            "action": "✋ Hold Existing / No Entry",
             "rationale": "Trading near historical high valuation with temporary export volume slowdown.",
         },
     ]

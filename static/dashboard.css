@@ -2653,6 +2653,192 @@ body {
   box-shadow: 0 0 12px var(--accent-glow);
 }
 
+/* Nav Brand Group & Persistent Top Disclaimer Pill */
+.nav-brand-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-disclaimer-pill {
+  background: rgba(234, 179, 8, 0.12);
+  border: 1px solid rgba(234, 179, 8, 0.35);
+  color: #fde047;
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+}
+
+[data-theme="light"] .brand-disclaimer-pill {
+  background: #fefce8;
+  border-color: #fde047;
+  color: #854d0e;
+}
+
+/* Differentiated Action Buttons by Product Type */
+.btn-buy-stock {
+  background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
+  border: 1px solid #38bdf8;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+}
+
+.btn-buy-stock:hover {
+  background: linear-gradient(135deg, #0369a1 0%, #1d4ed8 100%);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.45);
+  transform: translateY(-1px);
+}
+
+.btn-buy-etf {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+  border: 1px solid #fbbf24;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.3);
+}
+
+.btn-buy-etf:hover {
+  background: linear-gradient(135deg, #b45309 0%, #92400e 100%);
+  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.45);
+  transform: translateY(-1px);
+}
+
+.btn-buy-mf {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  border: 1px solid #c084fc;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.3);
+}
+
+.btn-buy-mf:hover {
+  background: linear-gradient(135deg, #6d28d9 0%, #5b21b6 100%);
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.45);
+  transform: translateY(-1px);
+}
+
+/* Score Legend Bar & Pill Colors */
+.score-legend-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  background: var(--panel-card);
+  border: 1px solid var(--line);
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  margin-bottom: 16px;
+  font-size: 12px;
+}
+
+.slb-title {
+  color: var(--text-muted);
+  font-weight: 700;
+  margin-right: 4px;
+}
+
+.score-pill {
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  display: inline-block;
+}
+
+.score-pill.score-strong-buy,
+.score-pill.score-high {
+  background: rgba(16, 185, 129, 0.18);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: #34d399;
+}
+
+.score-pill.score-buy,
+.score-pill.score-moderate {
+  background: rgba(56, 189, 248, 0.18);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  color: #38bdf8;
+}
+
+.score-pill.score-hold,
+.score-pill.score-neutral {
+  background: rgba(234, 179, 8, 0.18);
+  border: 1px solid rgba(234, 179, 8, 0.4);
+  color: #fbbf24;
+}
+
+.score-pill.score-avoid,
+.score-pill.score-low {
+  background: rgba(244, 63, 94, 0.18);
+  border: 1px solid rgba(244, 63, 94, 0.4);
+  color: #fb7185;
+}
+
+/* Overconfidence Legend Box */
+.overconfidence-legend-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  font-size: 13px;
+  color: var(--text);
+  margin-bottom: 18px;
+}
+
+.ocl-icon {
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.ocl-text strong {
+  color: var(--accent);
+}
+
+.ocl-text p {
+  margin: 4px 0 0 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* Drift Warmup Notice Card */
+.drift-warmup-notice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(234, 179, 8, 0.08);
+  border: 1px solid rgba(234, 179, 8, 0.25);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  margin-top: 14px;
+  margin-bottom: 14px;
+}
+
+.dwn-icon {
+  font-size: 20px;
+}
+
+.dwn-body strong {
+  display: block;
+  font-size: 13px;
+  color: #fef08a;
+  margin-bottom: 2px;
+}
+
+[data-theme="light"] .dwn-body strong {
+  color: #854d0e;
+}
+
+.dwn-body p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
 /* Daily Picks Block */
 .daily-picks-block {
   background: var(--panel);

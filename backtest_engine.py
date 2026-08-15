@@ -314,12 +314,12 @@ def compute_live_drift(conn: sqlite3.Connection, window_days: int = 60) -> dict[
                 "tier_code": tier_code,
                 "sample_count": n,
                 "baseline_win_rate": f"{baseline_wr:.1f}%",
-                "live_win_rate": "Insufficient Data (N < 15)",
+                "live_win_rate": "⏳ Awaiting Live Trades (0/15)",
                 "live_win_rate_num": None,
-                "gap": "N/A",
-                "status": "ACCUMULATING_DATA",
+                "gap": "Tracking Ready",
+                "status": "COLLECTING_TRADES",
                 "status_badge": "neutral",
-                "avg_return": "N/A",
+                "avg_return": "Pending",
             })
             continue
 
@@ -472,7 +472,7 @@ def make_calibration_svg(buckets: list[dict[str, Any]], width: int = 680, height
       <line x1="{padding}" y1="{height - padding}" x2="{width - padding}" y2="{height - padding}" stroke="#2d3e5c" stroke-width="1.5" />
       <line x1="{padding}" y1="{padding}" x2="{padding}" y2="{height - padding}" stroke="#2d3e5c" stroke-width="1.5" />
       <line x1="{p_start_x}" y1="{p_start_y}" x2="{p_end_x}" y2="{p_end_y}" stroke="#64748b" stroke-dasharray="4,4" stroke-width="1.5" />
-      <text x="{width - padding - 8}" y="{padding + 14}" text-anchor="end" fill="#64748b" font-size="10" font-family="Inter, sans-serif">Ideal Calibration (45°)</text>
+      <text x="{padding + 16}" y="{padding + 16}" text-anchor="start" fill="#94a3b8" font-size="10" font-weight="600" font-family="Inter, sans-serif">--- Ideal 1:1 Calibration (45°)</text>
       <polyline points="{poly_points}" fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" />
       {svg_labels}
       <text x="{width / 2}" y="{height - 8}" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="Inter, sans-serif">Nominal Model Confidence Score (%)</text>

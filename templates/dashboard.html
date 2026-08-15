@@ -24,9 +24,14 @@
     <!-- Top Navigation Header with Dedicated App Pages -->
     <header class="master-navbar">
       <div class="nav-shell">
-        <div class="nav-brand">
-          <span class="nav-pulse"></span>
-          <strong>INDIA PRE-MARKET <span class="gradient-text">& PORTFOLIO AI</span></strong>
+        <div class="nav-brand-group">
+          <div class="nav-brand">
+            <span class="nav-pulse"></span>
+            <strong>INDIA PRE-MARKET <span class="gradient-text">& PORTFOLIO AI</span></strong>
+          </div>
+          <div class="brand-disclaimer-pill" title="Quantitative model for educational & paper trading simulation only.">
+            ⚠️ Research & Simulation • Not Financial Advice
+          </div>
         </div>
 
         <nav class="nav-links">
@@ -54,8 +59,8 @@
         </nav>
 
         <div class="nav-actions">
-          <div class="portfolio-chip" onclick="switchMainView('holdings')" title="Click to view your live Equity Holdings">
-            <span class="p-chip-label">Cash:</span>
+          <div class="portfolio-chip" onclick="switchMainView('holdings')" title="Remaining available cash (P&L tracked against ₹10,00,000 initial virtual wallet)">
+            <span class="p-chip-label">Cash (vs ₹10L):</span>
             <strong class="p-chip-val" id="navCashDisplay">{{ paper_portfolio.cash_balance }}</strong>
             <span class="p-chip-gain {{ 'positive' if '+' in paper_portfolio.total_gain_pct else 'negative' }}">({{ paper_portfolio.total_gain_pct }})</span>
           </div>
@@ -244,6 +249,15 @@
             </div>
           </div>
 
+          <!-- SCORE TIER GUIDE LEGEND -->
+          <div class="score-legend-bar">
+            <span class="slb-title">Score Rating Guide:</span>
+            <span class="score-pill score-strong-buy">🟢 80–100: Strong Buy (High Conviction)</span>
+            <span class="score-pill score-buy">🔵 60–79: Buy on Dips (Favorable)</span>
+            <span class="score-pill score-hold">🟡 45–59: Neutral (Rangebound)</span>
+            <span class="score-pill score-avoid">🔴 &lt;45: Weak (Avoid)</span>
+          </div>
+
           <!-- 🟢 BULLISH UPWARD STOCKS SECTION -->
           <div class="daily-picks-block" id="dpBlockBullish">
             <div class="dp-block-header bullish-header">
@@ -269,7 +283,7 @@
                     <th>Target 2</th>
                     <th>Stop Loss</th>
                     <th>Model Score</th>
-                    <th>Action / Buy</th>
+                    <th>Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -288,8 +302,8 @@
                       <td class="negative font-mono">{{ s.stop_loss }}</td>
                       <td><span class="score-pill score-{{ s.badge }}">{{ s.score }}</span></td>
                       <td>
-                        <button type="button" class="btn btn-primary btn-sm" onclick="openBuyModal('{{ s.symbol }}', '{{ s.name }}', 'Stock', {{ s.price_raw }}, 10, {{ s.stop_loss_raw }}, {{ s.target_1_raw }}, {{ s.target_2_raw }})">
-                          + Buy / Hold
+                        <button type="button" class="btn btn-buy-stock btn-sm" onclick="openBuyModal('{{ s.symbol }}', '{{ s.name }}', 'Stock', {{ s.price_raw }}, 10, {{ s.stop_loss_raw }}, {{ s.target_1_raw }}, {{ s.target_2_raw }})">
+                          🛒 Buy Shares
                         </button>
                       </td>
                     </tr>
@@ -388,8 +402,8 @@
                       <td><span class="score-pill score-{{ e.badge }}">{{ e.score }}</span></td>
                       <td><span class="action-tag action-{{ e.badge }}">{{ e.action }}</span></td>
                       <td>
-                        <button type="button" class="btn btn-primary btn-sm" onclick="openBuyModal('{{ e.symbol }}', '{{ e.name }}', 'ETF', {{ e.price_raw }}, 25, {{ e.price_raw * 0.95 }}, {{ e.price_raw * 1.08 }}, {{ e.price_raw * 1.12 }})">
-                          + Buy Units
+                        <button type="button" class="btn btn-buy-etf btn-sm" onclick="openBuyModal('{{ e.symbol }}', '{{ e.name }}', 'ETF', {{ e.price_raw }}, 25, {{ e.price_raw * 0.95 }}, {{ e.price_raw * 1.08 }}, {{ e.price_raw * 1.12 }})">
+                          🪙 Buy Units
                         </button>
                       </td>
                     </tr>
@@ -439,8 +453,8 @@
                       <td><span class="score-pill score-{{ m.badge }}">{{ m.score }}</span></td>
                       <td><span class="action-tag action-{{ m.badge }}">{{ m.action }}</span></td>
                       <td>
-                        <button type="button" class="btn btn-primary btn-sm" onclick="openBuyModal('{{ m.symbol }}', '{{ m.name }}', 'Mutual Fund', {{ m.nav.replace('₹','').replace(',','')|float }}, 100, 0, 0, 0)">
-                          + Invest Lump Sum
+                        <button type="button" class="btn btn-buy-mf btn-sm" onclick="openBuyModal('{{ m.symbol }}', '{{ m.name }}', 'Mutual Fund', {{ m.nav.replace('₹','').replace(',','')|float }}, 100, 0, 0, 0)">
+                          🏦 Invest Lump Sum
                         </button>
                       </td>
                     </tr>
@@ -1453,6 +1467,18 @@
             </div>
           </div>
 
+          <!-- OVERCONFIDENCE GAP EXPLANATION LEGEND -->
+          <div class="overconfidence-legend-box">
+            <span class="ocl-icon">📐</span>
+            <div class="ocl-text">
+              <strong>Understanding the Overconfidence Gap (Nominal Confidence − Actual 5D Win Rate):</strong>
+              <p>
+                <span class="negative font-mono"><strong>+Gap (Red):</strong></span> The raw model was overconfident (e.g. nominal 80% vs 64.8% real win rate). The engine automatically dampens these scores.<br>
+                <span class="positive font-mono"><strong>-Gap (Green):</strong></span> The raw model was conservative/underconfident (e.g. Avoid tier expected 25% but achieved 38.5%). All signals are auto-calibrated to empirical probabilities.
+              </p>
+            </div>
+          </div>
+
           <div class="backtest-grid">
             <div class="backtest-table-wrapper">
               <table class="watchlist-table">
@@ -1474,7 +1500,7 @@
                       <td class="positive"><strong>{{ b.win_rate_5d }}</strong></td>
                       <td class="{{ 'positive' if '+' in b.avg_return_5d else 'negative' }}">{{ b.avg_return_5d }}</td>
                       <td>{{ b.profit_factor_5d }}</td>
-                      <td class="{{ 'negative' if '+' in b.overconfidence_gap else 'positive' }}">{{ b.overconfidence_gap }}</td>
+                      <td class="{{ 'negative' if '+' in b.overconfidence_gap else 'positive' }} font-mono"><strong>{{ b.overconfidence_gap }}</strong></td>
                     </tr>
                   {% endfor %}
                 </tbody>
@@ -1497,6 +1523,15 @@
               <span class="drift-status-badge {{ 'badge-panic' if drift_summary.has_drift_alert else 'badge-healthy' }}">
                 {{ '⚠️ DRIFT ALERT' if drift_summary.has_drift_alert else '✅ CALIBRATION HEALTHY' }}
               </span>
+            </div>
+          </div>
+
+          <!-- DRIFT WARMUP NOTICE (Inline Note for N < 15) -->
+          <div class="drift-warmup-notice">
+            <span class="dwn-icon">ℹ️</span>
+            <div class="dwn-body">
+              <strong>Live Tracking Calibration Warming Up</strong>
+              <p>Live drift monitoring tracks your real trade outcomes over a rolling {{ drift_summary.window_days }}-day window (activates as paper/shadow trades resolve with 15+ samples per tier). In the meantime, the 2-year walk-forward backtest baselines above are actively governing signal confidence.</p>
             </div>
           </div>
 
