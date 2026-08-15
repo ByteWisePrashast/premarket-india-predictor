@@ -898,15 +898,17 @@ def make_trajectory_chart_svg(yearly_schedule: list[dict[str, Any]], mode: str =
     for g in [0.25, 0.5, 0.75, 1.0]:
         y_pos = padding_top + plot_h - (g * plot_h)
         val_label = fmt_curr(g * max_val)
-        grid_lines.append(f'<line x1="{padding_left}" y1="{y_pos:.1f}" x2="{width - padding_right}" y2="{y_pos:.1f}" stroke="rgba(255,255,255,0.06)" stroke-dasharray="3,3" />')
-        grid_lines.append(f'<text x="{padding_left - 8}" y="{y_pos + 4:.1f}" fill="#64748b" font-size="10" text-anchor="end" font-family="JetBrains Mono, monospace">{val_label}</text>')
+        grid_lines.append(f'<line class="chart-grid-line" x1="{padding_left}" y1="{y_pos:.1f}" x2="{width - padding_right}" y2="{y_pos:.1f}" stroke="rgba(148,163,184,0.18)" stroke-dasharray="3,3" />')
+        grid_lines.append(f'<text class="chart-grid-text" x="{padding_left - 8}" y="{y_pos + 4:.1f}" fill="#64748b" font-size="10" text-anchor="end" font-family="JetBrains Mono, monospace">{val_label}</text>')
+
+    grid_lines.append(f'<line class="chart-axis-line" x1="{padding_left}" y1="{base_y:.1f}" x2="{width - padding_right}" y2="{base_y:.1f}" stroke="rgba(148,163,184,0.35)" stroke-width="1" />')
 
     year_ticks = []
     for idx, row in enumerate(yearly_schedule):
         if n > 12 and (idx + 1) % 2 != 0 and idx != n - 1:
             continue
         x_pos = padding_left + (idx / max(1, n - 1)) * plot_w
-        year_ticks.append(f'<text x="{x_pos:.1f}" y="{base_y + 18}" fill="#94a3b8" font-size="11" text-anchor="middle" font-family="Inter, sans-serif">Y{row["year"]}</text>')
+        year_ticks.append(f'<text class="chart-year-text" x="{x_pos:.1f}" y="{base_y + 18}" fill="#64748b" font-size="11" text-anchor="middle" font-family="Inter, sans-serif">Y{row["year"]}</text>')
 
     return f"""<svg viewBox="0 0 {width} {height}" class="wealth-trajectory-svg" role="img" aria-label="Compounding Growth Trajectory Chart">
       <defs>
