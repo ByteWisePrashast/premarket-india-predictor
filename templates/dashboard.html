@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}?v=2.6">
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}?v=2.7">
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" defer></script>
     <script>
       (function() {
@@ -1522,9 +1522,205 @@
                       <div class="ret-cell"><span class="ret-period">1Y</span><strong class="ret-val positive">{{ asset.returns['1y'] }}</strong></div>
                       <div class="ret-cell highlight-cell"><span class="ret-period">3Y CAGR</span><strong class="ret-val positive">{{ asset.returns['3y_cagr'] }}</strong></div>
                     {% endif %}
+              <!-- ====================================================================
+                   360° EXECUTIVE ASSET INTELLIGENCE & INSTITUTIONAL DOSSIER
+                   ==================================================================== -->
+              {% if asset.dossier %}
+                <section class="dossier-section" style="margin-top: 28px;">
+                  <div class="dossier-section-header">
+                    <div class="dsh-title-group">
+                      <span class="dsh-icon">🏛️</span>
+                      <div>
+                        <h3>360° Executive Intelligence & Institutional Dossier</h3>
+                        <span class="dsh-sub">Granular management details, corporate narrative, performance track record, analyst catalysts & news</span>
+                      </div>
+                    </div>
+                    <span class="badge-type {{ asset.asset_type|lower|replace(' ', '-') }}">Full Dossier</span>
                   </div>
-                </article>
-              </section>
+
+                  <!-- DOSSIER GRID ROW 1: MANAGEMENT & CORPORATE PROFILE -->
+                  <div class="dossier-grid-row">
+                    <!-- CARD A: EXECUTIVE MANAGEMENT & OWNERSHIP -->
+                    <article class="dossier-card">
+                      <div class="dc-header">
+                        <span class="dc-icon">👔</span>
+                        <h4>Executive Management & Ownership Structure</h4>
+                      </div>
+                      <div class="dc-body">
+                        {% if asset.dossier.management.type == "mutual_fund" %}
+                          <div class="dc-info-item">
+                            <span class="dc-label">Asset Management Company (AMC):</span>
+                            <strong class="dc-val highlight-value">{{ asset.dossier.management.amc }}</strong>
+                          </div>
+                          <div class="dc-info-item" style="margin-top: 8px;">
+                            <span class="dc-label">Fund Managers:</span>
+                            <div class="dc-manager-chips" style="margin-top: 4px;">
+                              {% for mgr in asset.dossier.management.fund_managers %}
+                                <span class="manager-chip">👤 {{ mgr }}</span>
+                              {% endfor %}
+                            </div>
+                          </div>
+                          <div class="dc-info-row" style="margin-top: 10px; display: flex; gap: 16px;">
+                            <div><span class="dc-label">Fund Manager Tenure:</span> <strong class="dc-val">{{ asset.dossier.management.tenure }}</strong></div>
+                            <div><span class="dc-label">Total AUM:</span> <strong class="dc-val highlight-value">{{ asset.dossier.management.aum }}</strong></div>
+                          </div>
+                        {% elif asset.dossier.management.type == "crypto" %}
+                          <div class="dc-info-item">
+                            <span class="dc-label">Protocol Founders / Creators:</span>
+                            <strong class="dc-val highlight-value">{{ asset.dossier.management.founders }}</strong>
+                          </div>
+                          <div class="dc-info-row" style="margin-top: 10px; display: flex; gap: 16px; flex-wrap: wrap;">
+                            <div><span class="dc-label">Inception Year:</span> <strong class="dc-val">{{ asset.dossier.management.inception_year }}</strong></div>
+                            <div><span class="dc-label">Consensus Engine:</span> <strong class="dc-val">{{ asset.dossier.management.consensus }}</strong></div>
+                            <div><span class="dc-label">Max Supply Cap:</span> <strong class="dc-val font-mono">{{ asset.dossier.management.max_supply }}</strong></div>
+                          </div>
+                        {% elif asset.dossier.management.type == "etf" %}
+                          <div class="dc-info-item">
+                            <span class="dc-label">Fund Manager / Trustee:</span>
+                            <strong class="dc-val highlight-value">{{ asset.dossier.management.fund_house }}</strong>
+                          </div>
+                          <div class="dc-info-item" style="margin-top: 6px;">
+                            <span class="dc-label">Underlying Index Tracked:</span>
+                            <strong class="dc-val">{{ asset.dossier.management.index_tracked }}</strong>
+                          </div>
+                          <div class="dc-info-item" style="margin-top: 6px;">
+                            <span class="dc-label">Annual Expense Ratio:</span>
+                            <strong class="dc-val positive font-mono">{{ asset.dossier.management.expense_ratio }}</strong>
+                          </div>
+                        {% else %}
+                          <div class="dc-info-item">
+                            <span class="dc-label">Key Executive Officers:</span>
+                            <div class="dc-officers-grid" style="margin-top: 6px;">
+                              {% for off in asset.dossier.management.officers %}
+                                <div class="officer-box">
+                                  <strong>{{ off.name }}</strong>
+                                  <span>{{ off.title }} {% if off.age != '-' %}(Age {{ off.age }}){% endif %}</span>
+                                </div>
+                              {% endfor %}
+                            </div>
+                          </div>
+                          <div class="dc-ownership-section" style="margin-top: 12px;">
+                            <span class="dc-label">Shareholding Pattern:</span>
+                            <div class="ownership-progress-bar" style="margin-top: 6px;">
+                              <div class="op-seg seg-promoter" style="width: {{ asset.dossier.management.promoter_pct_raw }}%;" title="Promoter: {{ asset.dossier.management.promoter_pct }}"></div>
+                              <div class="op-seg seg-inst" style="width: {{ asset.dossier.management.inst_pct_raw }}%;" title="FII / DII: {{ asset.dossier.management.inst_pct }}"></div>
+                              <div class="op-seg seg-public" style="width: {{ asset.dossier.management.public_pct_raw }}%;" title="Public: {{ asset.dossier.management.public_pct }}"></div>
+                            </div>
+                            <div class="ownership-legend" style="margin-top: 6px;">
+                              <span class="leg-item"><span class="leg-dot dot-promoter"></span> Promoter: <strong>{{ asset.dossier.management.promoter_pct }}</strong></span>
+                              <span class="leg-item"><span class="leg-dot dot-inst"></span> FII / DII: <strong>{{ asset.dossier.management.inst_pct }}</strong></span>
+                              <span class="leg-item"><span class="leg-dot dot-public"></span> Public: <strong>{{ asset.dossier.management.public_pct }}</strong></span>
+                            </div>
+                          </div>
+                        {% endif %}
+                      </div>
+                    </article>
+
+                    <!-- CARD B: CORPORATE / SCHEME PROFILE & HISTORY -->
+                    <article class="dossier-card">
+                      <div class="dc-header">
+                        <span class="dc-icon">📜</span>
+                        <h4>Corporate & Scheme Detailed History</h4>
+                      </div>
+                      <div class="dc-body">
+                        <p class="dc-summary-narrative">{{ asset.dossier.profile.summary }}</p>
+                        
+                        {% if asset.dossier.profile.top_holdings %}
+                          <div class="dc-holdings-box" style="margin-top: 12px;">
+                            <span class="dc-label">Top Portfolio Holdings Breakdown:</span>
+                            <div class="dc-holdings-tags" style="margin-top: 6px;">
+                              {% for h in asset.dossier.profile.top_holdings %}
+                                <span class="holding-tag"><strong>{{ h.name }}</strong> ({{ h.pct }})</span>
+                              {% endfor %}
+                            </div>
+                          </div>
+                        {% endif %}
+
+                        <div class="dc-profile-footer-row" style="margin-top: 12px; display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px;">
+                          {% if asset.dossier.profile.sector %}<div><span class="dc-label">Sector:</span> <strong>{{ asset.dossier.profile.sector }}</strong></div>{% endif %}
+                          {% if asset.dossier.profile.industry %}<div><span class="dc-label">Industry:</span> <strong>{{ asset.dossier.profile.industry }}</strong></div>{% endif %}
+                          {% if asset.dossier.profile.full_time_employees != 'N/A' %}<div><span class="dc-label">Employees:</span> <strong>{{ asset.dossier.profile.full_time_employees }}</strong></div>{% endif %}
+                        </div>
+                      </div>
+                    </article>
+                  </div>
+
+                  <!-- DOSSIER GRID ROW 2: FUTURE CATALYSTS & REAL-TIME NEWS -->
+                  <div class="dossier-grid-row" style="margin-top: 16px;">
+                    <!-- CARD C: FUTURE GROWTH CATALYSTS & PRICE TARGETS -->
+                    <article class="dossier-card">
+                      <div class="dc-header">
+                        <span class="dc-icon">🚀</span>
+                        <h4>Future Growth Catalysts & Analyst Price Targets</h4>
+                      </div>
+                      <div class="dc-body">
+                        <div class="dc-outlook-row">
+                          <div class="outlook-box">
+                            <span class="dc-label">Wall St / Analyst Consensus:</span>
+                            <strong class="dc-val positive" style="font-size: 15px;">{{ asset.dossier.future_outlook.consensus }}</strong>
+                            <span class="font-xs" style="color: var(--text-dim); display: block;">Based on {{ asset.dossier.future_outlook.analyst_count }} analyst models</span>
+                          </div>
+                        </div>
+
+                        <div class="analyst-target-slider-box" style="margin-top: 12px;">
+                          <span class="dc-label">Analyst 12-Month Target Price Range:</span>
+                          <div class="target-range-bar" style="margin-top: 6px;">
+                            <div class="tr-low">Low: <strong>{{ asset.dossier.future_outlook.target_low }}</strong></div>
+                            <div class="tr-mean">Mean: <strong class="highlight-value">{{ asset.dossier.future_outlook.target_mean }}</strong></div>
+                            <div class="tr-high">High: <strong class="positive">{{ asset.dossier.future_outlook.target_high }}</strong></div>
+                          </div>
+                        </div>
+
+                        <div class="dc-growth-metrics-grid" style="margin-top: 12px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+                          <div class="gm-box"><span class="dc-label">Forward P/E:</span> <strong class="dc-val font-mono">{{ asset.dossier.future_outlook.forward_pe if asset.dossier.future_outlook.forward_pe else 'N/A' }}</strong></div>
+                          <div class="gm-box"><span class="dc-label">PEG Ratio:</span> <strong class="dc-val font-mono">{{ asset.dossier.future_outlook.peg_ratio }}</strong></div>
+                          <div class="gm-box"><span class="dc-label">Revenue Growth:</span> <strong class="dc-val positive font-mono">{{ asset.dossier.future_outlook.revenue_growth }}</strong></div>
+                        </div>
+                      </div>
+                    </article>
+
+                    <!-- CARD D: REAL-TIME NEWS & SENTIMENT FEED -->
+                    <article class="dossier-card">
+                      <div class="dc-header">
+                        <span class="dc-icon">📰</span>
+                        <h4>Real-Time News & Market Sentiment Feed</h4>
+                      </div>
+                      <div class="dc-body">
+                        <div class="news-feed-list">
+                          {% for n in asset.dossier.news_feed %}
+                            <div class="news-feed-card">
+                              <div class="nfc-top">
+                                <span class="news-sentiment-badge sentiment-{{ n.sentiment_badge }}">{{ n.sentiment_icon }} {{ n.sentiment }}</span>
+                                <span class="news-publisher">{{ n.publisher }} • {{ n.date }}</span>
+                              </div>
+                              <h5 class="news-headline"><a href="{{ n.link }}" target="_blank" rel="noopener">{{ n.title }}</a></h5>
+                              <p class="news-summary">{{ n.summary }}</p>
+                            </div>
+                          {% endfor %}
+                        </div>
+                      </div>
+                    </article>
+                  </div>
+
+                  <!-- DOSSIER GRID ROW 3: GRANULAR FINANCIAL METRICS -->
+                  <article class="dossier-card" style="margin-top: 16px;">
+                    <div class="dc-header">
+                      <span class="dc-icon">🔬</span>
+                      <h4>Granular Financial & Operational Metrics Grid</h4>
+                    </div>
+                    <div class="dc-body">
+                      <div class="granular-metrics-grid">
+                        {% for gm in asset.dossier.granular_metrics %}
+                          <div class="gm-pill">
+                            <span class="gmp-label">{{ gm.label }}</span>
+                            <strong class="gmp-val">{{ gm.val }}</strong>
+                          </div>
+                        {% endfor %}
+                      </div>
+                    </div>
+                  </article>
+                </section>
+              {% endif %}
             </section>
           {% else %}
             <div class="error-panel">
