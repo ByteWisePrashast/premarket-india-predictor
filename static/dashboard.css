@@ -2598,3 +2598,154 @@ body {
   color: #0f172a;
 }
 
+/* ==========================================================================
+   DAILY TOP PICKS, EQUITY HOLDINGS & THEME BUTTON POLISH
+   ========================================================================== */
+
+.highlight-nav-flame {
+  border-color: rgba(249, 115, 22, 0.4) !important;
+  color: #fb923c !important;
+}
+
+.highlight-nav-flame:hover,
+.highlight-nav-flame.active {
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.25) 0%, rgba(234, 88, 12, 0.15) 100%) !important;
+  border-color: #f97316 !important;
+  color: #fed7aa !important;
+  box-shadow: 0 0 14px rgba(249, 115, 22, 0.3) !important;
+}
+
+.highlight-nav-green {
+  border-color: rgba(16, 185, 129, 0.4) !important;
+  color: #34d399 !important;
+}
+
+.highlight-nav-green:hover,
+.highlight-nav-green.active {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.25) 0%, rgba(5, 150, 105, 0.15) 100%) !important;
+  border-color: #10b981 !important;
+  color: #a7f3d0 !important;
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.3) !important;
+}
+
+/* Theme Toggle Button Polish */
+.btn-theme-toggle {
+  background: var(--panel-card);
+  border: 1px solid var(--line);
+  color: var(--text);
+  padding: 7px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.25s ease;
+  user-select: none;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-theme-toggle:hover {
+  background: var(--panel-hover);
+  border-color: var(--accent);
+  transform: translateY(-1px);
+  box-shadow: 0 0 12px var(--accent-glow);
+}
+
+/* Daily Picks Block */
+.daily-picks-block {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-md);
+}
+
+.dp-block-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 16px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.dp-bh-title {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.dp-icon {
+  font-size: 26px;
+}
+
+.dp-bh-title h3 {
+  margin: 0 0 2px 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.dp-sub {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.bullish-header {
+  border-left: 4px solid #10b981;
+  padding-left: 12px;
+}
+
+.bearish-header {
+  border-left: 4px solid #f43f5e;
+  padding-left: 12px;
+}
+
+.etf-header {
+  border-left: 4px solid #f59e0b;
+  padding-left: 12px;
+}
+
+.mf-header {
+  border-left: 4px solid #a78bfa;
+  padding-left: 12px;
+}
+
+.empty-holdings-card {
+  text-align: center;
+  padding: 48px 24px;
+  background: var(--panel-card);
+  border: 2px dashed var(--line);
+  border-radius: var(--radius-lg);
+  margin-top: 16px;
+}
+
+.eh-icon {
+  font-size: 42px;
+  display: block;
+  margin-bottom: 12px;
+}
+
+.empty-holdings-card h4 {
+  font-size: 18px;
+  margin: 0 0 6px 0;
+  color: var(--text);
+}
+
+.empty-holdings-card p {
+  max-width: 580px;
+  margin: 0 auto;
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.portfolio-action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+

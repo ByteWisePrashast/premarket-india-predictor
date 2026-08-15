@@ -40,6 +40,7 @@ from portfolio_planner import (
     calculate_step_up_sip,
     generate_lump_sum_portfolio,
     generate_sip_plan,
+    get_daily_top_picks,
 )
 from premarket_predictor import DataPoint, MarketReport, build_report, clamp, signed_score
 from risk_engine import calculate_transaction_friction, check_portfolio_risk_guardrails, check_volatility_regime
@@ -529,6 +530,23 @@ def flatten_all_paper_positions() -> dict[str, Any]:
     }
 
 
+def set_paper_capital(capital_amount: float) -> dict[str, Any]:
+    init_db()
+    capital = max(10000.0, float(capital_amount))
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        open_trades = conn.execute("SELECT SUM(position_value) AS total_val FROM paper_trades WHERE status = 'OPEN'").fetchone()
+        open_val = float(open_trades["total_val"] or 0.0) if open_trades else 0.0
+        remaining_cash = max(0.0, capital - open_val)
+        conn.execute("UPDATE paper_portfolio SET initial_capital = ?, cash_balance = ?, updated_at = ? WHERE id = 1", (capital, remaining_cash, datetime.now().isoformat()))
+    return {
+        "ok": True,
+        "initial_capital": fmt_curr(capital),
+        "cash_balance": fmt_curr(remaining_cash),
+        "message": f"Successfully updated total portfolio capital to {fmt_curr(capital)} (Remaining cash: {fmt_curr(remaining_cash)}).",
+    }
+
+
 _CACHED_STOCKS_WATCHLIST: list[dict[str, Any]] = []
 _CACHED_STOCKS_TIME: float = 0.0
 STOCKS_CACHE_TTL: float = 120.0
@@ -716,8 +734,9 @@ def index() -> str:
     backtest_stats = get_fallback_backtest_stats()
 
     # Portfolio Architect Default Models
-    default_lump_sum_plan = generate_lump_sum_portfolio(capital_amount=500000.0, horizon_years=3.0, risk_profile="moderate")
+    default_lump_sum_plan = generate_lump_sum_portfolio(capital_amount=500000.0, horizon_years=3.0, risk_profile="moderate", vehicle_preference="all")
     default_sip_plan = generate_sip_plan(monthly_amount=10000.0, horizon_years=5.0, risk_profile="moderate")
+    daily_picks = get_daily_top_picks()
 
     # Investment Calculators Default States
     default_calc_sip = calculate_regular_sip(monthly_amount=10000.0, annual_return_pct=14.0, horizon_years=10.0)
@@ -752,6 +771,7 @@ def index() -> str:
         stocks_watchlist=stocks_watchlist,
         etfs_watchlist=etfs_watchlist,
         mfs_watchlist=mfs_watchlist,
+        daily_picks=daily_picks,
         paper_portfolio=paper_portfolio,
         vix_regime=vix_regime,
         risk_guardrails=risk_guardrails,
@@ -802,9 +822,22 @@ def api_asset(query: str) -> Any:
     return jsonify(make_json_safe(result))
 
 
+@app.get("/api/daily-picks")
+def api_daily_picks() -> Any:
+    return jsonify(get_daily_top_picks())
+
+
 @app.get("/api/paper/portfolio")
 def api_paper_portfolio() -> Any:
     return jsonify(get_paper_portfolio_state())
+
+
+@app.post("/api/paper/capital/set")
+def api_paper_capital_set() -> Any:
+    data = request.get_json(silent=True) or request.form or {}
+    capital = float(data.get("capital", 1000000.0))
+    res = set_paper_capital(capital)
+    return jsonify(res)
 
 
 @app.post("/api/paper/trade/open")
@@ -868,7 +901,8 @@ def api_portfolio_generate() -> Any:
     capital = float(data.get("capital", 500000.0))
     horizon = float(data.get("horizon", 3.0))
     risk = str(data.get("risk", "moderate"))
-    res = generate_lump_sum_portfolio(capital_amount=capital, horizon_years=horizon, risk_profile=risk)
+    vehicle = str(data.get("vehicle", "all"))
+    res = generate_lump_sum_portfolio(capital_amount=capital, horizon_years=horizon, risk_profile=risk, vehicle_preference=vehicle)
     return jsonify(res)
 
 
