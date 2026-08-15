@@ -38,16 +38,16 @@
           <button type="button" class="nav-link-btn active" id="navBtnMarket" onclick="switchMainView('market')">
             📊 Market & Gap Cues
           </button>
-          <button type="button" class="nav-link-btn highlight-nav-flame" id="navBtnDailyPicks" onclick="switchMainView('daily-picks')">
+          <button type="button" class="nav-link-btn" id="navBtnDailyPicks" onclick="switchMainView('daily-picks')">
             🔥 Daily Top Picks
           </button>
-          <button type="button" class="nav-link-btn highlight-nav-gold" id="navBtnPlanner" onclick="switchMainView('planner')">
+          <button type="button" class="nav-link-btn" id="navBtnPlanner" onclick="switchMainView('planner')">
             🎯 Capital Buy Sheet
           </button>
-          <button type="button" class="nav-link-btn highlight-nav-green" id="navBtnHoldings" onclick="switchMainView('holdings')">
+          <button type="button" class="nav-link-btn" id="navBtnHoldings" onclick="switchMainView('holdings')">
             💼 My Equity Holdings ({{ paper_portfolio.open_trades_count }})
           </button>
-          <button type="button" class="nav-link-btn highlight-nav-cyan" id="navBtnCalculators" onclick="switchMainView('calculators')">
+          <button type="button" class="nav-link-btn" id="navBtnCalculators" onclick="switchMainView('calculators')">
             🧮 Wealth Calculators
           </button>
           <button type="button" class="nav-link-btn" id="navBtnEvaluator" onclick="switchMainView('evaluator')">
@@ -59,10 +59,15 @@
         </nav>
 
         <div class="nav-actions">
-          <div class="portfolio-chip" onclick="switchMainView('holdings')" title="Remaining available cash (P&L tracked against ₹10,00,000 initial virtual wallet)">
-            <span class="p-chip-label">Cash (vs ₹10L):</span>
-            <strong class="p-chip-val" id="navCashDisplay">{{ paper_portfolio.cash_balance }}</strong>
-            <span class="p-chip-gain {{ 'positive' if '+' in paper_portfolio.total_gain_pct else 'negative' }}">({{ paper_portfolio.total_gain_pct }})</span>
+          <div class="portfolio-chip" onclick="switchMainView('holdings')" title="Available cash balance in your virtual trading wallet (vs ₹10,00,000 initial wallet)">
+            <div class="p-chip-top">
+              <span class="p-chip-label">Cash</span>
+              <strong class="p-chip-val" id="navCashDisplay">{{ paper_portfolio.cash_balance }}</strong>
+            </div>
+            <div class="p-chip-sub">
+              <span class="p-chip-gain {{ 'positive' if '+' in paper_portfolio.total_gain_pct else 'negative' }}">{{ paper_portfolio.total_gain_pct }}</span>
+              <span class="p-chip-vs">vs ₹10L</span>
+            </div>
           </div>
           <form method="get" action="/">
             <button type="submit" class="btn btn-refresh" id="refreshBtn">
@@ -249,13 +254,13 @@
             </div>
           </div>
 
-          <!-- SCORE TIER GUIDE LEGEND -->
-          <div class="score-legend-bar">
-            <span class="slb-title">Score Rating Guide:</span>
-            <span class="score-pill score-strong-buy">🟢 80–100: Strong Buy (High Conviction)</span>
-            <span class="score-pill score-buy">🔵 60–79: Buy on Dips (Favorable)</span>
-            <span class="score-pill score-hold">🟡 45–59: Neutral (Rangebound)</span>
-            <span class="score-pill score-avoid">🔴 &lt;45: Weak (Avoid)</span>
+          <!-- INLINE SCORE GUIDE LEGEND -->
+          <div class="score-legend-inline">
+            <span class="sli-label">Model Score Guide:</span>
+            <span class="score-badge score-badge-high">🟢 ≥85 Strong Buy</span>
+            <span class="score-badge score-badge-good">🔵 70–84 Favorable</span>
+            <span class="score-badge score-badge-neutral">🟡 50–69 Neutral</span>
+            <span class="score-badge score-badge-low">🔴 &lt;50 Weak / Avoid</span>
           </div>
 
           <!-- 🟢 BULLISH UPWARD STOCKS SECTION -->
@@ -300,10 +305,14 @@
                       <td class="positive font-mono"><strong>{{ s.target_1 }}</strong></td>
                       <td class="positive font-mono">{{ s.target_2 }}</td>
                       <td class="negative font-mono">{{ s.stop_loss }}</td>
-                      <td><span class="score-pill score-{{ s.badge }}">{{ s.score }}</span></td>
+                      <td>
+                        <span class="score-badge {% if s.score >= 85 %}score-badge-high{% elif s.score >= 70 %}score-badge-good{% elif s.score >= 50 %}score-badge-neutral{% else %}score-badge-low{% endif %}">
+                          {{ s.score }}
+                        </span>
+                      </td>
                       <td>
                         <button type="button" class="btn btn-buy-stock btn-sm" onclick="openBuyModal('{{ s.symbol }}', '{{ s.name }}', 'Stock', {{ s.price_raw }}, 10, {{ s.stop_loss_raw }}, {{ s.target_1_raw }}, {{ s.target_2_raw }})">
-                          🛒 Buy Shares
+                          Buy Shares
                         </button>
                       </td>
                     </tr>
@@ -353,7 +362,11 @@
                       <td class="negative font-mono">{{ b.change_1d }}</td>
                       <td class="font-mono">{{ b.resistance }}</td>
                       <td class="font-mono">{{ b.support }}</td>
-                      <td><span class="score-pill score-{{ b.badge }}">{{ b.score }}</span></td>
+                      <td>
+                        <span class="score-badge {% if b.score >= 85 %}score-badge-high{% elif b.score >= 70 %}score-badge-good{% elif b.score >= 50 %}score-badge-neutral{% else %}score-badge-low{% endif %}">
+                          {{ b.score }}
+                        </span>
+                      </td>
                       <td><strong class="negative">{{ b.action }}</strong></td>
                     </tr>
                   {% endfor %}
@@ -399,11 +412,15 @@
                       <td class="font-mono"><strong>{{ e.price }}</strong></td>
                       <td class="{{ 'positive' if '+' in e.change_1d else 'negative' }}">{{ e.change_1d }}</td>
                       <td class="positive font-mono"><strong>{{ e.cagr_1y }}</strong></td>
-                      <td><span class="score-pill score-{{ e.badge }}">{{ e.score }}</span></td>
+                      <td>
+                        <span class="score-badge {% if e.score >= 85 %}score-badge-high{% elif e.score >= 70 %}score-badge-good{% elif e.score >= 50 %}score-badge-neutral{% else %}score-badge-low{% endif %}">
+                          {{ e.score }}
+                        </span>
+                      </td>
                       <td><span class="action-tag action-{{ e.badge }}">{{ e.action }}</span></td>
                       <td>
                         <button type="button" class="btn btn-buy-etf btn-sm" onclick="openBuyModal('{{ e.symbol }}', '{{ e.name }}', 'ETF', {{ e.price_raw }}, 25, {{ e.price_raw * 0.95 }}, {{ e.price_raw * 1.08 }}, {{ e.price_raw * 1.12 }})">
-                          🪙 Buy Units
+                          Buy Units
                         </button>
                       </td>
                     </tr>
@@ -450,11 +467,15 @@
                       <td class="positive font-mono">{{ m.cagr_1y }}</td>
                       <td class="positive font-mono"><strong>{{ m.cagr_3y }}</strong></td>
                       <td class="positive font-mono">{{ m.sharpe }}</td>
-                      <td><span class="score-pill score-{{ m.badge }}">{{ m.score }}</span></td>
+                      <td>
+                        <span class="score-badge {% if m.score >= 85 %}score-badge-high{% elif m.score >= 70 %}score-badge-good{% elif m.score >= 50 %}score-badge-neutral{% else %}score-badge-low{% endif %}">
+                          {{ m.score }}
+                        </span>
+                      </td>
                       <td><span class="action-tag action-{{ m.badge }}">{{ m.action }}</span></td>
                       <td>
                         <button type="button" class="btn btn-buy-mf btn-sm" onclick="openBuyModal('{{ m.symbol }}', '{{ m.name }}', 'Mutual Fund', {{ m.nav.replace('₹','').replace(',','')|float }}, 100, 0, 0, 0)">
-                          🏦 Invest Lump Sum
+                          Invest
                         </button>
                       </td>
                     </tr>
