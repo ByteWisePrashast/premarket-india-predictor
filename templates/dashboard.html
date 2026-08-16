@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}?v=12.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}?v=13.0">
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" defer></script>
     <script>
       (function() {
@@ -3777,12 +3777,8 @@
       {% endif %}
 
       // ====================================================================
-      // AI FINANCIAL CO-PILOT BOT & CHATGPT VOICE ENGINE CONTROLLER
+      // PREMARKET PORTFOLIO ASSISTANT CONTROLLER
       // ====================================================================
-      let botTtsEnabled = true;
-      let botSpeechRecognition = null;
-      let isBotRecognizing = false;
-      let isHandsFreeVoiceLoop = false;
       let activeBotTone = 'conversational';
       let storedChatMemory = [];
 
@@ -3797,11 +3793,6 @@
         if (modal) modal.classList.toggle('hidden');
       }
 
-
-
-
-
-      // CHAT MEMORY PERSISTENCE & EXPORT ENGINE
       function saveChatToMemory(sender, text, cards, suggestions) {
         storedChatMemory.push({
           sender: sender,
@@ -3820,10 +3811,12 @@
           const raw = localStorage.getItem('financial_bot_chat_memory');
           if (raw) {
             storedChatMemory = JSON.parse(raw);
-            if (storedChatMemory && storedChatMemory.length) {
+            if (storedChatMemory && Array.isArray(storedChatMemory) && storedChatMemory.length) {
               storedChatMemory.forEach(item => {
-                appendBotMessage('mainBotChatWindow', item.sender, item.text, item.cards, item.suggestions, false);
-                appendBotMessage('floatingBotChatWindow', item.sender, item.text, item.cards, item.suggestions, false);
+                if (item && item.sender && item.text) {
+                  appendBotMessage('mainBotChatWindow', item.sender, item.text, item.cards, item.suggestions, false);
+                  appendBotMessage('floatingBotChatWindow', item.sender, item.text, item.cards, item.suggestions, false);
+                }
               });
             }
           }
@@ -3833,15 +3826,15 @@
       function clearChatHistory() {
         if (confirm("Clear AI Assistant memory and conversation history?")) {
           storedChatMemory = [];
-          localStorage.removeItem('financial_bot_chat_memory');
+          try { localStorage.removeItem('financial_bot_chat_memory'); } catch(e) {}
           const mWin = document.getElementById('mainBotChatWindow');
           const fWin = document.getElementById('floatingBotChatWindow');
           const initHtml = `
             <div class="bot-msg-bubble bot-msg-bot">
               <div class="msg-avatar">✨</div>
               <div class="msg-content">
-                <div class="msg-header-tag">AI Financial Co-Pilot • Online</div>
-                <p>Chat memory reset! Ask me anything about Indian Stocks, Mutual Funds, ETFs, Cryptocurrencies, Goal Planning, or Capital Allocation!</p>
+                <div class="msg-header-tag">PreMarket Portfolio Assistant • Online</div>
+                <p>Chat memory reset! Ask me anything about Indian Stocks, Mutual Funds, ETFs, Capital Allocation, or SIP strategies!</p>
               </div>
             </div>
           `;
@@ -3856,7 +3849,7 @@
           return;
         }
         let txt = "=========================================================\n";
-        txt += "FINANCIAL AI CO-PILOT ASSISTANT - CONVERSATION TRANSCRIPT\n";
+        txt += "PREMARKET PORTFOLIO ASSISTANT - CONVERSATION TRANSCRIPT\n";
         txt += `Export Date: ${new Date().toLocaleString()}\n`;
         txt += "=========================================================\n\n";
 
@@ -3868,78 +3861,16 @@
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `AI_CoPilot_Transcript_${new Date().toISOString().slice(0, 10)}.txt`;
+        a.download = `Portfolio_Assistant_Transcript_${new Date().toISOString().slice(0, 10)}.txt`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
       }
 
-      function appendBotMessage(targetWindowId, sender, text, cards, suggestions, shouldSave = true) {
-        const win = document.getElementById(targetWindowId);
-        if (!win) return;
-
-        if (shouldSave && targetWindowId === 'mainBotChatWindow') {
-          saveChatToMemory(sender, text, cards, suggestions);
-        }
-
-        const msgDiv = document.createElement('div');
-        msgDiv.className = `bot-msg-bubble ${sender === 'user' ? 'bot-msg-user' : 'bot-msg-bot'}`;
-
-        if (sender === 'user') {
-          msgDiv.innerHTML = `
-            <div class="msg-avatar">👤</div>
-            <div class="msg-content"><p>${text}</p></div>
-          `;
-        } else {
-          let contentHtml = `<div class="msg-avatar">✨</div><div class="msg-content">`;
-          contentHtml += `<div class="msg-header-tag">AI Financial Co-Pilot</div>`;
-          contentHtml += renderBotMarkdown(text);
-          if (cards && cards.length) {
-            contentHtml += renderBotAssetCards(cards);
-          }
-          if (suggestions && suggestions.length) {
-            contentHtml += `<div class="bot-msg-suggestions">`;
-            suggestions.forEach(s => {
-              contentHtml += `<button type="button" class="btn-bot-chip" onclick="askBotQuestion('${s.replace(/'/g, "\\'")}')">${s}</button>`;
-            });
-            contentHtml += `</div>`;
-          }
-          contentHtml += `</div>`;
-          msgDiv.innerHTML = contentHtml;
-        }
-
-        win.appendChild(msgDiv);
-        win.scrollTop = win.scrollHeight;
-      }
-
-      function fetchBotResponse(userMsg, windowId) {
-        fetch('/api/bot/chat', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({
-            message: userMsg,
-            history: storedChatMemory.slice(-6),
-            tone: activeBotTone
-          })
-        })
-        .then(res => res.json())
-        .then(data => {
-          if (data && data.ok) {
-            appendBotMessage(windowId, 'bot', data.text, data.cards, data.suggestions);
-            if (windowId !== 'mainBotChatWindow') {
-              appendBotMessage('mainBotChatWindow', 'bot', data.text, data.cards, data.suggestions, false);
-            }
-          }
-        })
-        .catch(err => console.error("Bot API error:", err));
-      }
-
-      document.addEventListener('DOMContentLoaded', loadSavedChatHistory);
-
       function renderBotMarkdown(mdText) {
         if (!mdText) return '';
-        let html = mdText
+        let html = String(mdText)
           .replace(/### (.*?)\n/g, '<h4 class="bot-heading">$1</h4>')
           .replace(/#### (.*?)\n/g, '<h5 class="bot-subheading">$1</h5>')
           .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
@@ -3955,7 +3886,7 @@
         if (!cards || !cards.length) return '';
         let html = '<div class="bot-cards-grid">';
         cards.forEach(c => {
-          const isAlloc = c.change_pct && (c.change_pct.includes('%') || c.change_pct.includes('Alloc'));
+          const isAlloc = c.change_pct && (String(c.change_pct).includes('%') || String(c.change_pct).includes('Alloc'));
           const priceLabel = isAlloc ? 'Allocated Capital' : 'Price / NAV';
           const allocLabel = isAlloc ? 'Share' : 'Return';
           const pastRet = c.past_cagr || '21.4% (3Y)';
@@ -4000,6 +3931,75 @@
         return html;
       }
 
+      function appendBotMessage(targetWindowId, sender, text, cards, suggestions, shouldSave = true) {
+        try {
+          const win = document.getElementById(targetWindowId);
+          if (!win) return;
+
+          if (shouldSave && targetWindowId === 'mainBotChatWindow') {
+            saveChatToMemory(sender, text, cards, suggestions);
+          }
+
+          const msgDiv = document.createElement('div');
+          msgDiv.className = `bot-msg-bubble ${sender === 'user' ? 'bot-msg-user' : 'bot-msg-bot'}`;
+
+          if (sender === 'user') {
+            msgDiv.innerHTML = `
+              <div class="msg-avatar">👤</div>
+              <div class="msg-content"><p>${text}</p></div>
+            `;
+          } else {
+            let contentHtml = `<div class="msg-avatar">✨</div><div class="msg-content">`;
+            contentHtml += `<div class="msg-header-tag">PreMarket Portfolio Assistant</div>`;
+            contentHtml += renderBotMarkdown(text);
+            if (cards && cards.length) {
+              contentHtml += renderBotAssetCards(cards);
+            }
+            if (suggestions && suggestions.length) {
+              contentHtml += `<div class="bot-msg-suggestions">`;
+              suggestions.forEach(s => {
+                contentHtml += `<button type="button" class="btn-bot-chip" onclick="askBotQuestion('${s.replace(/'/g, "\\'")}')">${s}</button>`;
+              });
+              contentHtml += `</div>`;
+            }
+            contentHtml += `</div>`;
+            msgDiv.innerHTML = contentHtml;
+          }
+
+          win.appendChild(msgDiv);
+          win.scrollTop = win.scrollHeight;
+        } catch (e) {
+          console.error("appendBotMessage error:", e);
+        }
+      }
+
+      function fetchBotResponse(userMsg, windowId) {
+        fetch('/api/bot/chat', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            message: userMsg,
+            history: storedChatMemory.slice(-6),
+            tone: activeBotTone
+          })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.ok) {
+            appendBotMessage(windowId, 'bot', data.text, data.cards, data.suggestions);
+            if (windowId !== 'mainBotChatWindow') {
+              appendBotMessage('mainBotChatWindow', 'bot', data.text, data.cards, data.suggestions, false);
+            }
+          } else {
+            appendBotMessage(windowId, 'bot', "Apologies, I encountered an issue retrieving live data. Please try asking again!");
+          }
+        })
+        .catch(err => {
+          console.error("Bot API error:", err);
+          appendBotMessage(windowId, 'bot', "Connection issue. Please verify your network and try again.");
+        });
+      }
+
       function sendMainBotMessage() {
         const input = document.getElementById('mainBotInputText');
         const text = input ? input.value.trim() : '';
@@ -4016,6 +4016,9 @@
         if (!text) return;
 
         appendBotMessage('floatingBotChatWindow', 'user', text);
+        if (document.getElementById('mainBotChatWindow')) {
+          appendBotMessage('mainBotChatWindow', 'user', text, [], [], false);
+        }
         input.value = '';
         fetchBotResponse(text, 'floatingBotChatWindow');
       }
@@ -4026,20 +4029,7 @@
         fetchBotResponse(question, 'mainBotChatWindow');
       }
 
-      function fetchBotResponse(userMsg, windowId) {
-        fetch('/api/bot/chat', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({ message: userMsg })
-        })
-        .then(res => res.json())
-        .then(data => {
-          if (data && data.ok) {
-            appendBotMessage(windowId, 'bot', data.text, data.cards, data.suggestions);
-          }
-        })
-        .catch(err => console.error("Bot API error:", err));
-      }
+      document.addEventListener('DOMContentLoaded', loadSavedChatHistory);
     </script>
   </body>
 </html>
