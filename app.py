@@ -1026,8 +1026,9 @@ def api_bot_chat() -> Any:
     data = request.get_json(silent=True) or request.form or {}
     message = str(data.get("message") or "").strip()
     history = data.get("history") or []
+    tone = str(data.get("tone") or "conversational").lower()
     paper_portfolio = get_paper_portfolio_state()
-    res = process_bot_query(user_message=message, session_history=history, paper_portfolio=paper_portfolio)
+    res = process_bot_query(user_message=message, session_history=history, paper_portfolio=paper_portfolio, tone=tone)
     return jsonify(res)
 
 

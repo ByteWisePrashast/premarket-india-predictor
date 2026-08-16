@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}?v=4.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}?v=5.0">
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" defer></script>
     <script>
       (function() {
@@ -2590,11 +2590,22 @@
             </div>
           </div>
           <div class="bot-header-controls">
+            <select id="botToneSelect" class="btn-mute-toggle" style="background: rgba(56, 189, 248, 0.1);" onchange="updateBotTonePreference(this.value)">
+              <option value="conversational">💬 Tone: Conversational Advisor</option>
+              <option value="executive">🏛️ Tone: Executive Briefing</option>
+              <option value="trader">⚡ Tone: Trader Momentum</option>
+            </select>
             <button type="button" class="btn btn-voice-mode-trigger" onclick="openVoiceOverlayModal()">
               🎙️ Hands-Free ChatGPT Voice Mode
             </button>
             <button type="button" class="btn btn-mute-toggle" id="botTtsToggleBtn" onclick="toggleBotTts()">
               🔊 Voice Output: ON
+            </button>
+            <button type="button" class="btn btn-mute-toggle" onclick="exportChatTranscript()" title="Export full conversation transcript">
+              📥 Export Chat
+            </button>
+            <button type="button" class="btn btn-mute-toggle" onclick="clearChatHistory()" title="Clear memory and reset chat">
+              🗑️ Clear
             </button>
           </div>
         </div>
@@ -2653,6 +2664,8 @@
           </div>
         </div>
         <div class="fbm-controls">
+          <button type="button" class="fbm-btn-icon" onclick="exportChatTranscript()" title="Export Chat">📥</button>
+          <button type="button" class="fbm-btn-icon" onclick="clearChatHistory()" title="Clear Memory">🗑️</button>
           <button type="button" class="fbm-btn-icon" onclick="openVoiceOverlayModal()" title="Start ChatGPT Voice Mode">🎙️</button>
           <button type="button" class="fbm-btn-icon" onclick="toggleBotTts()" id="floatTtsBtn" title="Toggle Voice Output">🔊</button>
           <button type="button" class="fbm-btn-close" onclick="toggleFloatingBotModal()">✕</button>
@@ -3816,6 +3829,14 @@
       let botSpeechRecognition = null;
       let isBotRecognizing = false;
       let isHandsFreeVoiceLoop = false;
+      let activeBotTone = 'conversational';
+      let storedChatMemory = [];
+
+      function updateBotTonePreference(toneVal) {
+        activeBotTone = toneVal || 'conversational';
+        const sel = document.getElementById('botToneSelect');
+        if (sel) sel.value = activeBotTone;
+      }
 
       function toggleFloatingBotModal() {
         const modal = document.getElementById('floatingBotModal');
@@ -3845,6 +3866,215 @@
           window.speechSynthesis.cancel();
         }
       }
+
+      // HUMAN-LIKE NATURAL VOICE SELECTION ENGINE
+      function selectBestHumanVoice() {
+        if (!('speechSynthesis' in window)) return null;
+        const voices = window.speechSynthesis.getVoices();
+        if (!voices || !voices.length) return null;
+
+        // Prioritize natural neural human voice profiles
+        const best = voices.find(v => 
+          (v.name.includes('Natural') || v.name.includes('Neural') || v.name.includes('Google') || v.name.includes('Rishi') || v.name.includes('Samantha') || v.name.includes('Karen') || v.name.includes('Siri')) &&
+          (v.lang.includes('en-IN') || v.lang.includes('en-US') || v.lang.includes('en-GB'))
+        ) || voices.find(v => v.lang.includes('en-IN')) || voices.find(v => v.lang.includes('en-US')) || voices[0];
+
+        return best;
+      }
+
+      // SPEECH PROSODY PREPROCESSOR (Expands acronyms & cleans raw markdown for human conversational speech)
+      function preprocessTextForHumanSpeech(text) {
+        if (!text) return '';
+        let s = text;
+        // Strip markdown links, hashtags, asterisks, hashes, backticks
+        s = s.replace(/\[(.*?)\]\(.*?\)/g, '$1');
+        s = s.replace(/#|[*_`~>|-]/g, ' ');
+
+        // Expand acronyms into natural conversational speech phrasing
+        s = s.replace(/\bSIP\b/gi, 'S-I-P');
+        s = s.replace(/\bNAV\b/gi, 'N-A-V');
+        s = s.replace(/\bCAGR\b/gi, 'C-A-G-R');
+        s = s.replace(/\bETF\b/gi, 'E-T-F');
+        s = s.replace(/\bETFs\b/gi, 'E-T-Fs');
+        s = s.replace(/\bMF\b/gi, 'Mutual Fund');
+        s = s.replace(/\bMFs\b/gi, 'Mutual Funds');
+        s = s.replace(/\bFII\b/gi, 'F-I-I');
+        s = s.replace(/\bDII\b/gi, 'D-I-I');
+        s = s.replace(/\bVIX\b/gi, 'Vix volatility index');
+        s = s.replace(/₹\s*(\d+(?:,\d+)*(?:\.\d+)?)/g, function(match, p1) {
+          return p1.replace(/,/g, '') + ' rupees';
+        });
+        s = s.replace(/\s+/g, ' ').trim();
+        return s;
+      }
+
+      function speakBotResponse(text) {
+        if (!botTtsEnabled || !('speechSynthesis' in window)) return;
+        window.speechSynthesis.cancel();
+
+        const speechText = preprocessTextForHumanSpeech(text);
+        const utterance = new SpeechSynthesisUtterance(speechText);
+        utterance.rate = 0.95; // Natural human cadence rate
+        utterance.pitch = 1.02; // Warm conversational pitch
+
+        const humanVoice = selectBestHumanVoice();
+        if (humanVoice) utterance.voice = humanVoice;
+
+        utterance.onstart = function() {
+          setVoiceOrbState('speaking', 'AI Assistant Speaking...', speechText.slice(0, 100) + '...');
+        };
+
+        utterance.onend = function() {
+          if (isHandsFreeVoiceLoop) {
+            setTimeout(startHandsFreeListening, 600);
+          } else {
+            setVoiceOrbState('idle', 'Tap Orb to Start Speaking', 'Ask your next financial question...');
+          }
+        };
+
+        window.speechSynthesis.speak(utterance);
+      }
+
+      // CHAT MEMORY PERSISTENCE & EXPORT ENGINE
+      function saveChatToMemory(sender, text, cards, suggestions) {
+        storedChatMemory.push({
+          sender: sender,
+          text: text,
+          cards: cards || [],
+          suggestions: suggestions || [],
+          timestamp: new Date().toISOString()
+        });
+        try {
+          localStorage.setItem('financial_bot_chat_memory', JSON.stringify(storedChatMemory));
+        } catch(e) {}
+      }
+
+      function loadSavedChatHistory() {
+        try {
+          const raw = localStorage.getItem('financial_bot_chat_memory');
+          if (raw) {
+            storedChatMemory = JSON.parse(raw);
+            if (storedChatMemory && storedChatMemory.length) {
+              storedChatMemory.forEach(item => {
+                appendBotMessage('mainBotChatWindow', item.sender, item.text, item.cards, item.suggestions, false);
+                appendBotMessage('floatingBotChatWindow', item.sender, item.text, item.cards, item.suggestions, false);
+              });
+            }
+          }
+        } catch(e) {}
+      }
+
+      function clearChatHistory() {
+        if (confirm("Clear AI Assistant memory and conversation history?")) {
+          storedChatMemory = [];
+          localStorage.removeItem('financial_bot_chat_memory');
+          const mWin = document.getElementById('mainBotChatWindow');
+          const fWin = document.getElementById('floatingBotChatWindow');
+          const initHtml = `
+            <div class="bot-msg-bubble bot-msg-bot">
+              <div class="msg-avatar">🤖</div>
+              <div class="msg-content">
+                <div class="msg-header-tag">AI Financial Co-Pilot • Online</div>
+                <p>Chat memory reset! Ask me anything about Indian Stocks, Mutual Funds, ETFs, Cryptocurrencies, Goal Planning, or Capital Allocation!</p>
+              </div>
+            </div>
+          `;
+          if (mWin) mWin.innerHTML = initHtml;
+          if (fWin) fWin.innerHTML = initHtml;
+        }
+      }
+
+      function exportChatTranscript() {
+        if (!storedChatMemory || !storedChatMemory.length) {
+          alert("No chat history available to export yet.");
+          return;
+        }
+        let txt = "=========================================================\n";
+        txt += "FINANCIAL AI CO-PILOT ASSISTANT - CONVERSATION TRANSCRIPT\n";
+        txt += `Export Date: ${new Date().toLocaleString()}\n`;
+        txt += "=========================================================\n\n";
+
+        storedChatMemory.forEach((m, idx) => {
+          txt += `[${idx + 1}] ${m.sender.toUpperCase()} (${m.timestamp}):\n${m.text}\n\n`;
+        });
+
+        const blob = new Blob([txt], { type: "text/plain;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `AI_CoPilot_Transcript_${new Date().toISOString().slice(0, 10)}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+
+      function appendBotMessage(targetWindowId, sender, text, cards, suggestions, shouldSave = true) {
+        const win = document.getElementById(targetWindowId);
+        if (!win) return;
+
+        if (shouldSave && targetWindowId === 'mainBotChatWindow') {
+          saveChatToMemory(sender, text, cards, suggestions);
+        }
+
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `bot-msg-bubble ${sender === 'user' ? 'bot-msg-user' : 'bot-msg-bot'}`;
+
+        if (sender === 'user') {
+          msgDiv.innerHTML = `
+            <div class="msg-avatar">👤</div>
+            <div class="msg-content"><p>${text}</p></div>
+          `;
+        } else {
+          let contentHtml = `<div class="msg-avatar">🤖</div><div class="msg-content">`;
+          contentHtml += `<div class="msg-header-tag">AI Financial Co-Pilot</div>`;
+          contentHtml += renderBotMarkdown(text);
+          if (cards && cards.length) {
+            contentHtml += renderBotAssetCards(cards);
+          }
+          if (suggestions && suggestions.length) {
+            contentHtml += `<div class="bot-msg-suggestions">`;
+            suggestions.forEach(s => {
+              contentHtml += `<button type="button" class="btn-bot-chip" onclick="askBotQuestion('${s.replace(/'/g, "\\'")}')">${s}</button>`;
+            });
+            contentHtml += `</div>`;
+          }
+          contentHtml += `</div>`;
+          msgDiv.innerHTML = contentHtml;
+        }
+
+        win.appendChild(msgDiv);
+        win.scrollTop = win.scrollHeight;
+      }
+
+      function fetchBotResponse(userMsg, windowId) {
+        fetch('/api/bot/chat', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            message: userMsg,
+            history: storedChatMemory.slice(-6),
+            tone: activeBotTone
+          })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.ok) {
+            appendBotMessage(windowId, 'bot', data.text, data.cards, data.suggestions);
+            if (windowId !== 'mainBotChatWindow') {
+              appendBotMessage('mainBotChatWindow', 'bot', data.text, data.cards, data.suggestions, false);
+            }
+            speakBotResponse(data.text);
+          }
+        })
+        .catch(err => console.error("Bot API error:", err));
+      }
+
+      // Initialize speech synthesis voices & load chat memory on DOM load
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.onvoiceschanged = selectBestHumanVoice;
+      }
+      document.addEventListener('DOMContentLoaded', loadSavedChatHistory);
 
       function speakBotResponse(text) {
         if (!botTtsEnabled || !('speechSynthesis' in window)) return;
