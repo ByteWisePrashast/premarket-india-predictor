@@ -463,18 +463,18 @@ def make_calibration_svg(buckets: list[dict[str, Any]], width: int = 680, height
     poly_points = " ".join(bucket_points)
 
     svg_labels = "".join([
-        f'<circle cx="{x:.1f}" cy="{y:.1f}" r="5" fill="#38bdf8" stroke="#ffffff" stroke-width="1.5" />'
-        f'<text x="{x:.1f}" y="{y - 9:.1f}" text-anchor="middle" fill="#f1f5f9" font-size="10" font-family="Inter, sans-serif">{name}: {val}</text>'
+        f'<circle cx="{x:.1f}" cy="{y:.1f}" r="5" class="cal-dot" />'
+        f'<text x="{x:.1f}" y="{y - 9:.1f}" text-anchor="middle" class="cal-text">{name}: {val}</text>'
         for x, y, name, val in labels
     ])
 
     return f"""<svg viewBox="0 0 {width} {height}" class="calibration-chart-svg" role="img" aria-label="Model Calibration Curve">
-      <line x1="{padding}" y1="{height - padding}" x2="{width - padding}" y2="{height - padding}" stroke="#2d3e5c" stroke-width="1.5" />
-      <line x1="{padding}" y1="{padding}" x2="{padding}" y2="{height - padding}" stroke="#2d3e5c" stroke-width="1.5" />
-      <line x1="{p_start_x}" y1="{p_start_y}" x2="{p_end_x}" y2="{p_end_y}" stroke="#64748b" stroke-dasharray="4,4" stroke-width="1.5" />
-      <text x="{padding + 16}" y="{padding + 16}" text-anchor="start" fill="#94a3b8" font-size="10" font-weight="600" font-family="Inter, sans-serif">--- Ideal 1:1 Calibration (45°)</text>
-      <polyline points="{poly_points}" fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" />
+      <line x1="{padding}" y1="{height - padding}" x2="{width - padding}" y2="{height - padding}" class="cal-axis-line" />
+      <line x1="{padding}" y1="{padding}" x2="{padding}" y2="{height - padding}" class="cal-axis-line" />
+      <line x1="{p_start_x}" y1="{p_start_y}" x2="{p_end_x}" y2="{p_end_y}" class="cal-ideal-line" stroke-dasharray="4,4" />
+      <text x="{padding + 16}" y="{padding + 16}" text-anchor="start" class="cal-subtext">--- Ideal 1:1 Calibration (45°)</text>
+      <polyline points="{poly_points}" fill="none" stroke="#0284c7" stroke-width="2.5" stroke-linecap="round" />
       {svg_labels}
-      <text x="{width / 2}" y="{height - 8}" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="Inter, sans-serif">Nominal Model Confidence Score (%)</text>
-      <text x="12" y="{height / 2}" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="Inter, sans-serif" transform="rotate(-90 12 {height / 2})">Actual Win Rate (%)</text>
+      <text x="{width / 2}" y="{height - 8}" text-anchor="middle" class="cal-axis-label">Nominal Model Confidence Score (%)</text>
+      <text x="14" y="{height / 2}" text-anchor="middle" class="cal-axis-label" transform="rotate(-90 14 {height / 2})">Actual Win Rate (%)</text>
     </svg>"""

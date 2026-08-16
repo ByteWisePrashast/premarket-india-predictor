@@ -1929,6 +1929,22 @@ body {
   grid-template-columns: 1.4fr 1fr;
   gap: 18px;
   margin-bottom: 16px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 900px) {
+  .backtest-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.backtest-table-wrapper {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  box-sizing: border-box;
 }
 
 .backtest-chart-box {
@@ -1936,6 +1952,9 @@ body {
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   padding: 14px;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .backtest-chart-box h4 {
@@ -1948,8 +1967,56 @@ body {
 
 .calibration-chart-svg {
   width: 100%;
-  height: 220px;
+  height: auto;
+  max-width: 100%;
   display: block;
+}
+
+.cal-dot {
+  fill: #0284c7;
+  stroke: #ffffff;
+  stroke-width: 1.5px;
+}
+
+.cal-text {
+  fill: var(--text);
+  font-size: 10.5px;
+  font-weight: 600;
+  font-family: var(--font-sans);
+}
+
+[data-theme="light"] .cal-text {
+  fill: #0f172a !important;
+}
+
+.cal-axis-line {
+  stroke: var(--line);
+  stroke-width: 1.5px;
+}
+
+[data-theme="light"] .cal-axis-line {
+  stroke: #cbd5e1 !important;
+}
+
+.cal-ideal-line {
+  stroke: #64748b;
+  stroke-width: 1.5px;
+}
+
+[data-theme="light"] .cal-ideal-line {
+  stroke: #94a3b8 !important;
+}
+
+.cal-subtext,
+.cal-axis-label {
+  fill: var(--text-muted);
+  font-size: 10.5px;
+  font-family: var(--font-sans);
+}
+
+[data-theme="light"] .cal-subtext,
+[data-theme="light"] .cal-axis-label {
+  fill: #475569 !important;
 }
 
 /* ==========================================================================
