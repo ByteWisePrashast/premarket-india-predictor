@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}?v=8.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}?v=9.0">
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" defer></script>
     <script>
       (function() {
@@ -2586,7 +2586,7 @@
             <span class="bot-avatar">✨</span>
             <div>
               <h2>AI Financial Co-Pilot Assistant</h2>
-              <p>24/7 Real-Time Quantitative Market Intelligence, Asset Recommendations, Capital Deployment & Gemini Live Voice Mode</p>
+              <p>24/7 Real-Time Quantitative Market Intelligence, Asset Recommendations, Capital Deployment & Hands-Free Voice Mode</p>
             </div>
           </div>
           <div class="bot-header-controls">
@@ -2596,7 +2596,7 @@
               <option value="trader">⚡ Tone: Trader Momentum</option>
             </select>
             <button type="button" class="btn btn-voice-mode-trigger" onclick="openVoiceOverlayModal()">
-              ✨ Gemini Live Voice
+              ✨ Hands-Free Live Voice
             </button>
             <button type="button" class="btn btn-mute-toggle" id="botTtsToggleBtn" onclick="toggleBotTts()">
               🔊 Voice Output: ON
@@ -2627,7 +2627,7 @@
             <div class="msg-content">
               <div class="msg-header-tag">AI Financial Co-Pilot • Online</div>
               <p>Hello! I am your 24/7 AI Financial Assistant. Ask me anything about Indian Stocks, Mutual Funds, ETFs, Cryptocurrencies, Goal Planning, or Capital Allocation!</p>
-              <div class="msg-sub-hint">💡 <em>Tip: Click ✨ below to speak your question or tap Gemini Live Voice above!</em></div>
+              <div class="msg-sub-hint">💡 <em>Tip: Click ✨ below to speak your question or tap Hands-Free Live Voice above!</em></div>
             </div>
           </div>
         </div>
@@ -2666,7 +2666,7 @@
         <div class="fbm-controls">
           <button type="button" class="fbm-btn-icon" onclick="exportChatTranscript()" title="Export Chat">📥</button>
           <button type="button" class="fbm-btn-icon" onclick="clearChatHistory()" title="Clear Memory">🗑️</button>
-          <button type="button" class="fbm-btn-icon" onclick="openVoiceOverlayModal()" title="Start Gemini Live Voice">✨</button>
+          <button type="button" class="fbm-btn-icon" onclick="openVoiceOverlayModal()" title="Start Live Voice Mode">✨</button>
           <button type="button" class="fbm-btn-icon" onclick="toggleBotTts()" id="floatTtsBtn" title="Toggle Voice Output">🔊</button>
           <button type="button" class="fbm-btn-close" onclick="toggleFloatingBotModal()">✕</button>
         </div>
@@ -2674,7 +2674,7 @@
 
       <div class="fbm-body" id="floatingBotChatWindow">
         <div class="bot-msg-bubble bot-msg-bot">
-          <div class="msg-avatar">🤖</div>
+          <div class="msg-avatar">✨</div>
           <div class="msg-content">
             <p>How can I help with your investments today? Ask for best MFs, stock entry levels, or capital allocation!</p>
           </div>
@@ -2683,7 +2683,7 @@
 
       <div class="fbm-footer">
         <div class="fbm-input-row">
-          <button type="button" class="btn-mic-record" id="floatBotMicBtn" onclick="toggleBotSpeechRecognition('float')">🎙️</button>
+          <button type="button" class="btn-mic-record" id="floatBotMicBtn" onclick="toggleBotSpeechRecognition('float')">✨</button>
           <input type="text" id="floatBotInputText" class="bot-text-input" placeholder="Ask AI Co-Pilot..." onkeydown="if(event.key==='Enter') sendFloatBotMessage()">
           <button type="button" class="btn btn-primary btn-sm" onclick="sendFloatBotMessage()">Send</button>
         </div>
@@ -4033,7 +4033,7 @@
             <div class="msg-content"><p>${text}</p></div>
           `;
         } else {
-          let contentHtml = `<div class="msg-avatar">🤖</div><div class="msg-content">`;
+          let contentHtml = `<div class="msg-avatar">✨</div><div class="msg-content">`;
           contentHtml += `<div class="msg-header-tag">AI Financial Co-Pilot</div>`;
           contentHtml += renderBotMarkdown(text);
           if (cards && cards.length) {
@@ -4452,7 +4452,7 @@
           if (emoji) emoji.textContent = '🔊';
         } else {
           orb.style.transform = 'scale(1.0)';
-          if (emoji) emoji.textContent = '🤖';
+          if (emoji) emoji.textContent = '✨';
         }
       }
     </script>
