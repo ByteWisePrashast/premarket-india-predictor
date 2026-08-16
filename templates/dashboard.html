@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}?v=7.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}?v=8.0">
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" defer></script>
     <script>
       (function() {
@@ -3979,7 +3979,7 @@
           const fWin = document.getElementById('floatingBotChatWindow');
           const initHtml = `
             <div class="bot-msg-bubble bot-msg-bot">
-              <div class="msg-avatar">🤖</div>
+              <div class="msg-avatar">✨</div>
               <div class="msg-content">
                 <div class="msg-header-tag">AI Financial Co-Pilot • Online</div>
                 <p>Chat memory reset! Ask me anything about Indian Stocks, Mutual Funds, ETFs, Cryptocurrencies, Goal Planning, or Capital Allocation!</p>
@@ -4118,6 +4118,8 @@
           .replace(/#### (.*?)\n/g, '<h5 class="bot-subheading">$1</h5>')
           .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
           .replace(/`(.*?)`/g, '<code class="bot-code-pill">$1</code>')
+          .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" class="bac-btn-dossier" style="display:inline-block; margin:2px 0;">$1</a>')
+          .replace(/---/g, '<hr style="border:0; border-top:1px solid rgba(255,255,255,0.1); margin:12px 0;">')
           .replace(/\n- (.*?)/g, '<br>• $1')
           .replace(/\n\n/g, '<br><br>');
         return html;
@@ -4127,19 +4129,32 @@
         if (!cards || !cards.length) return '';
         let html = '<div class="bot-cards-grid">';
         cards.forEach(c => {
+          const isAlloc = c.change_pct && (c.change_pct.includes('%') || c.change_pct.includes('Alloc'));
+          const priceLabel = isAlloc ? 'Allocated Capital' : 'Price / NAV';
+          const allocLabel = isAlloc ? 'Share' : 'Return';
+
           html += `
             <div class="bot-asset-card">
-              <div class="bac-top">
-                <span class="bac-name">${c.name}</span>
-                <span class="score-badge score-badge-${c.badge || 'buy'}">${c.score}/100</span>
+              <div class="bac-header">
+                <div class="bac-title-box">
+                  <span class="bac-symbol">${c.symbol || 'ASSET'}</span>
+                  <span class="bac-name">${c.name || c.symbol}</span>
+                </div>
+                <span class="bac-badge bac-badge-${c.badge || 'buy'}">${c.score}/100</span>
               </div>
-              <div class="bac-mid font-mono">
-                <span>Price/NAV: <strong>${c.price}</strong></span>
-                <span class="positive">${c.change_pct}</span>
+              <div class="bac-data-grid">
+                <div class="bac-field">
+                  <span class="bac-lbl">${priceLabel}</span>
+                  <span class="bac-val">${c.price || '₹1,000'}</span>
+                </div>
+                <div class="bac-field">
+                  <span class="bac-lbl">${allocLabel}</span>
+                  <span class="bac-val">${c.change_pct || '25%'}</span>
+                </div>
               </div>
               <div class="bac-actions">
-                <a href="/?symbol=${encodeURIComponent(c.symbol)}" class="btn btn-sm btn-refresh" style="font-size: 11px; padding: 3px 8px;">360° Dossier</a>
-                <button type="button" class="btn btn-sm btn-primary" onclick="openBuyModal('${c.symbol}', '${c.name.replace(/'/g, "\\'")}', '${c.price.replace(/[^0-9.]/g, '') || '1000'}')" style="font-size: 11px; padding: 3px 8px;">Paper Buy</button>
+                <a href="/?symbol=${encodeURIComponent(c.symbol)}" class="bac-btn-dossier">360° Dossier</a>
+                <button type="button" class="bac-btn-buy" onclick="openBuyModal('${c.symbol}', '${(c.name || c.symbol).replace(/'/g, "\\'")}', '${(c.price || '1000').replace(/[^0-9.]/g, '')}')">Paper Buy</button>
               </div>
             </div>
           `;
@@ -4161,7 +4176,7 @@
             <div class="msg-content"><p>${text}</p></div>
           `;
         } else {
-          let contentHtml = `<div class="msg-avatar">🤖</div><div class="msg-content">`;
+          let contentHtml = `<div class="msg-avatar">✨</div><div class="msg-content">`;
           contentHtml += `<div class="msg-header-tag">AI Financial Co-Pilot</div>`;
           contentHtml += renderBotMarkdown(text);
           if (cards && cards.length) {
