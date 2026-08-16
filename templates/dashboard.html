@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}?v=6.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}?v=7.0">
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" defer></script>
     <script>
       (function() {
@@ -61,7 +61,7 @@
             🧪 Drift & Calibration
           </button>
           <button type="button" class="nav-link-btn" id="navBtnBot" onclick="switchMainView('bot')">
-            🤖 AI Co-Pilot
+            ✨ AI Co-Pilot
           </button>
         </nav>
 
@@ -2583,10 +2583,10 @@
       <section class="bot-standalone-panel">
         <div class="bot-header-bar">
           <div class="bot-title-group">
-            <span class="bot-avatar">🤖</span>
+            <span class="bot-avatar">✨</span>
             <div>
               <h2>AI Financial Co-Pilot Assistant</h2>
-              <p>24/7 Real-Time Quantitative Market Intelligence, Asset Recommendations, Capital Deployment & ChatGPT Voice Mode</p>
+              <p>24/7 Real-Time Quantitative Market Intelligence, Asset Recommendations, Capital Deployment & Gemini Live Voice Mode</p>
             </div>
           </div>
           <div class="bot-header-controls">
@@ -2596,13 +2596,13 @@
               <option value="trader">⚡ Tone: Trader Momentum</option>
             </select>
             <button type="button" class="btn btn-voice-mode-trigger" onclick="openVoiceOverlayModal()">
-              🎙️ Hands-Free ChatGPT Voice Mode
+              ✨ Gemini Live Voice
             </button>
             <button type="button" class="btn btn-mute-toggle" id="botTtsToggleBtn" onclick="toggleBotTts()">
               🔊 Voice Output: ON
             </button>
             <button type="button" class="btn btn-mute-toggle" onclick="exportChatTranscript()" title="Export full conversation transcript">
-              📥 Export Chat
+              📥 Export
             </button>
             <button type="button" class="btn btn-mute-toggle" onclick="clearChatHistory()" title="Clear memory and reset chat">
               🗑️ Clear
@@ -2623,11 +2623,11 @@
         <!-- Chat Messages Container -->
         <div class="bot-chat-window" id="mainBotChatWindow">
           <div class="bot-msg-bubble bot-msg-bot">
-            <div class="msg-avatar">🤖</div>
+            <div class="msg-avatar">✨</div>
             <div class="msg-content">
               <div class="msg-header-tag">AI Financial Co-Pilot • Online</div>
               <p>Hello! I am your 24/7 AI Financial Assistant. Ask me anything about Indian Stocks, Mutual Funds, ETFs, Cryptocurrencies, Goal Planning, or Capital Allocation!</p>
-              <div class="msg-sub-hint">💡 <em>Tip: Click 🎙️ below to speak your question or tap Hands-Free Voice Mode above!</em></div>
+              <div class="msg-sub-hint">💡 <em>Tip: Click ✨ below to speak your question or tap Gemini Live Voice above!</em></div>
             </div>
           </div>
         </div>
@@ -2635,9 +2635,9 @@
         <!-- Chat Input Bar -->
         <div class="bot-input-bar">
           <button type="button" class="btn-mic-record" id="mainBotMicBtn" onclick="toggleBotSpeechRecognition('main')" title="Click to speak your question">
-            🎙️
+            ✨
           </button>
-          <input type="text" id="mainBotInputText" class="bot-text-input" placeholder="Ask anything (e.g., 'Which mutual funds are best?', 'Where to invest ₹2 Lakhs?')..." onkeydown="if(event.key==='Enter') sendMainBotMessage()">
+          <input type="text" id="mainBotInputText" class="bot-text-input" placeholder="Ask anything (e.g., '2000 sip, where I can do that', 'Which mutual funds are best?')..." onkeydown="if(event.key==='Enter') sendMainBotMessage()">
           <button type="button" class="btn btn-primary" onclick="sendMainBotMessage()">
             ⚡ Send
           </button>
@@ -2649,7 +2649,7 @@
          FLOATING SLIDE-OVER AI CO-PILOT CHAT WIDGET
          ==================================================================== -->
     <div class="floating-bot-launcher" id="floatingBotLauncher" onclick="toggleFloatingBotModal()">
-      <span class="fbl-icon">🤖</span>
+      <span class="fbl-icon">✨</span>
       <span class="fbl-label">AI Co-Pilot</span>
       <span class="fbl-badge-pulse"></span>
     </div>
@@ -2657,16 +2657,16 @@
     <div class="floating-bot-modal hidden" id="floatingBotModal">
       <div class="fbm-header">
         <div class="fbm-title">
-          <span class="fbm-icon">🤖</span>
+          <span class="fbm-icon">✨</span>
           <div>
             <h4>AI Financial Co-Pilot</h4>
-            <span class="font-xs" style="color: #10b981;">● Online & Voice Ready</span>
+            <span class="font-xs" style="color: #10b981;">● Online & Gemini Live</span>
           </div>
         </div>
         <div class="fbm-controls">
           <button type="button" class="fbm-btn-icon" onclick="exportChatTranscript()" title="Export Chat">📥</button>
           <button type="button" class="fbm-btn-icon" onclick="clearChatHistory()" title="Clear Memory">🗑️</button>
-          <button type="button" class="fbm-btn-icon" onclick="openVoiceOverlayModal()" title="Start ChatGPT Voice Mode">🎙️</button>
+          <button type="button" class="fbm-btn-icon" onclick="openVoiceOverlayModal()" title="Start Gemini Live Voice">✨</button>
           <button type="button" class="fbm-btn-icon" onclick="toggleBotTts()" id="floatTtsBtn" title="Toggle Voice Output">🔊</button>
           <button type="button" class="fbm-btn-close" onclick="toggleFloatingBotModal()">✕</button>
         </div>
@@ -3882,28 +3882,35 @@
         return best;
       }
 
-      // SPEECH PROSODY PREPROCESSOR (Expands acronyms & cleans raw markdown for human conversational speech)
+      // SPEECH PROSODY PREPROCESSOR (Expands terms & cleans all markdown/emojis for natural human speech)
       function preprocessTextForHumanSpeech(text) {
         if (!text) return '';
         let s = text;
-        // Strip markdown links, hashtags, asterisks, hashes, backticks
+        
+        // 1. Remove URLs & Markdown link markup, keeping plain text title
         s = s.replace(/\[(.*?)\]\(.*?\)/g, '$1');
-        s = s.replace(/#|[*_`~>|-]/g, ' ');
+        
+        // 2. Remove Emojis & Symbols completely so speech synthesis doesn't read symbol names
+        s = s.replace(/[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}📌📊💡🎯📜🚀🏛️🏦🛡️👤🤖⚡✨]/gu, ' ');
 
-        // Expand acronyms into natural conversational speech phrasing
-        s = s.replace(/\bSIP\b/gi, 'S-I-P');
-        s = s.replace(/\bNAV\b/gi, 'N-A-V');
-        s = s.replace(/\bCAGR\b/gi, 'C-A-G-R');
-        s = s.replace(/\bETF\b/gi, 'E-T-F');
-        s = s.replace(/\bETFs\b/gi, 'E-T-Fs');
+        // 3. Remove ALL Markdown formatting characters (*, _, #, -, •, `, ~)
+        s = s.replace(/#|[*_`~>|\-•]/g, ' ');
+
+        // 4. Clean financial expansions (use spaces instead of hyphens so it never says "dash"!)
+        s = s.replace(/\bSIP\b/gi, 'S I P');
+        s = s.replace(/\bNAV\b/gi, 'Net Asset Value');
+        s = s.replace(/\bCAGR\b/gi, 'Annualized Return');
+        s = s.replace(/\bETF\b/gi, 'Exchange Traded Fund');
+        s = s.replace(/\bETFs\b/gi, 'Exchange Traded Funds');
         s = s.replace(/\bMF\b/gi, 'Mutual Fund');
         s = s.replace(/\bMFs\b/gi, 'Mutual Funds');
-        s = s.replace(/\bFII\b/gi, 'F-I-I');
-        s = s.replace(/\bDII\b/gi, 'D-I-I');
-        s = s.replace(/\bVIX\b/gi, 'Vix volatility index');
+        s = s.replace(/\byFinance\b/gi, 'Yahoo Finance');
+        s = s.replace(/\bAMFI\b/gi, 'A M F I');
         s = s.replace(/₹\s*(\d+(?:,\d+)*(?:\.\d+)?)/g, function(match, p1) {
           return p1.replace(/,/g, '') + ' rupees';
         });
+
+        // 5. Clean up multiple spaces and trailing punctuation
         s = s.replace(/\s+/g, ' ').trim();
         return s;
       }

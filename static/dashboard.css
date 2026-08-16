@@ -4928,25 +4928,40 @@ body {
   position: fixed;
   bottom: 84px;
   right: 24px;
-  width: 380px;
-  height: 540px;
-  background: var(--surface-card);
-  border: 1px solid var(--border-color);
+  width: 420px;
+  max-width: 92vw;
+  height: 560px;
+  max-height: 82vh;
+  background: #0f172a !important;
+  border: 1px solid #334155 !important;
   border-radius: 16px;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
   display: flex;
   flex-direction: column;
-  z-index: 1000;
+  z-index: 10000 !important;
   overflow: hidden;
+}
+
+[data-theme="light"] .floating-bot-modal {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15) !important;
 }
 
 .fbm-header {
   padding: 14px 16px;
-  background: rgba(0, 0, 0, 0.2);
-  border-bottom: 1px solid var(--border-color);
+  background: #0f172a !important;
+  border-bottom: 1px solid #334155 !important;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  z-index: 10;
+}
+
+[data-theme="light"] .fbm-header {
+  background: #ffffff !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  color: #0f172a !important;
 }
 
 .fbm-title {
@@ -4959,21 +4974,42 @@ body {
   margin: 0;
   font-size: 14px;
   font-weight: 700;
+  color: #f8fafc;
+}
+
+[data-theme="light"] .fbm-title h4 {
+  color: #0f172a !important;
 }
 
 .fbm-controls {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .fbm-btn-icon, .fbm-btn-close {
   background: transparent;
   border: none;
-  color: var(--text-dim);
-  font-size: 16px;
+  color: #94a3b8;
+  font-size: 15px;
   cursor: pointer;
   padding: 4px;
+  border-radius: 6px;
+  transition: background 0.15s ease;
+}
+
+[data-theme="light"] .fbm-btn-icon,
+[data-theme="light"] .fbm-btn-close {
+  color: #475569 !important;
+}
+
+.fbm-btn-icon:hover, .fbm-btn-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="light"] .fbm-btn-icon:hover,
+[data-theme="light"] .fbm-btn-close:hover {
+  background: #f1f5f9 !important;
 }
 
 .fbm-body {

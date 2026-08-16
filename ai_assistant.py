@@ -121,7 +121,8 @@ def extract_mentioned_security(text: str) -> Optional[str]:
     }
     words = re.findall(r'\b[A-Z0-9]{3,10}\b', text)
     for w in words:
-        if w not in STOP_WORDS:
+        # Ticker symbol MUST contain at least 1 letter and cannot be pure digits like 2000, 5000, 10000
+        if w not in STOP_WORDS and not w.isdigit() and re.search(r'[A-Z]', w):
             return w
 
     return None
@@ -293,10 +294,10 @@ def process_bot_query(
             "suggestions": suggestions,
         }
 
-    # 2. CAPITAL DEPLOYMENT QUERY (e.g. "Where to invest ₹1 Lakh?", "Invest 50000", "Where can I deploy 5 Lakhs?")
+    # 2. CAPITAL DEPLOYMENT & SIP ALLOCATION QUERY (e.g. "2000 sip, where I can do that", "Where to invest ₹1 Lakh?")
     extracted_amt = extract_rupee_amount(msg)
-    if extracted_amt or any(k in msg_lower for k in ["where to invest", "where can i invest", "how to invest", "deploy capital", "where to put"]):
-        amt = extracted_amt or 100000.0
+    if extracted_amt or any(k in msg_lower for k in ["sip", "sips", "monthly investment", "where to invest", "where can i invest", "how to invest", "deploy capital", "where to put"]):
+        amt = extracted_amt or 5000.0
         horizon = extract_years_horizon(msg)
 
         lump_res = generate_lump_sum_portfolio(capital_amount=amt, horizon_years=horizon, risk_profile="moderate", vehicle_preference="all")
