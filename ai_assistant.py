@@ -112,9 +112,16 @@ def extract_mentioned_security(text: str) -> Optional[str]:
             return sym
 
     # Check uppercase ticker symbols like RELIANCE, TCS, BTC, INFY
+    STOP_WORDS = {
+        "THE", "AND", "FOR", "BUY", "SELL", "WHAT", "HOW", "WITH", "BEST", "SOME",
+        "HELLO", "GOOD", "MORNING", "AFTERNOON", "EVENING", "NIGHT", "WELL", "YOUR",
+        "THIS", "THAT", "THEM", "THEY", "HAVE", "FROM", "WILL", "WOULD", "COULD",
+        "SHOULD", "CAN", "PLEASE", "TELL", "SHOW", "GIVE", "NEED", "WANT", "LIKE",
+        "TODAY", "NOW", "HERE", "THERE", "ABOUT", "WHICH", "HI", "HEY", "NAMASTE"
+    }
     words = re.findall(r'\b[A-Z0-9]{3,10}\b', text)
     for w in words:
-        if w not in ["THE", "AND", "FOR", "BUY", "SELL", "WHAT", "HOW", "WITH", "BEST", "SOME"]:
+        if w not in STOP_WORDS:
             return w
 
     return None
@@ -166,6 +173,39 @@ def process_bot_query(
     msg_lower = msg.lower()
     cards = []
     suggestions = []
+
+    # 0. GREETING & CASUAL CONVERSATION INTENT HANDLER
+    greeting_words = {"hello", "hi", "hey", "namaste", "greetings"}
+    greeting_phrases = ["good morning", "good afternoon", "good evening", "how are you", "who are you", "what's up", "whats up"]
+    
+    clean_words = [w.strip(",.!?") for w in msg_lower.split()]
+    is_greeting_match = any(w in greeting_words for w in clean_words) or any(phrase in msg_lower for phrase in greeting_phrases)
+
+    if is_greeting_match and len(clean_words) <= 7:
+        import datetime
+        curr_hour = datetime.datetime.now().hour
+        tod = "Good morning" if curr_hour < 12 else "Good afternoon" if curr_hour < 17 else "Good evening"
+
+        reply = f"Hello! {tod}. I'm your **AI Financial Co-Pilot**.\n\n"
+        reply += "I'm online and connected to live quantitative market feeds, yFinance pricing models, and your portfolio diagnostics.\n\n"
+        reply += "How can I assist you with your investments today? You can ask me:\n"
+        reply += "- *'Which mutual funds or stocks are best for 3-5 years?'*\n"
+        reply += "- *'Where should I invest ₹1 Lakh right now?'*\n"
+        reply += "- *'Is Reliance or TCS a good buy today?'*\n"
+        reply += "- *'Analyze my portfolio risk.'*"
+
+        suggestions = [
+            "Which mutual funds are best?",
+            "Where to invest ₹1 Lakh?",
+            "Analyze Reliance stock",
+        ]
+
+        return {
+            "ok": True,
+            "text": append_citations_and_confidence(reply, confidence_pct=95, tone=tone),
+            "cards": [],
+            "suggestions": suggestions,
+        }
 
     # 1. SPECIFIC SECURITY QUERY (e.g. "Should I buy Reliance?", "How is Quant Small Cap?", "What about BTC?")
     mentioned_sym = extract_mentioned_security(msg)

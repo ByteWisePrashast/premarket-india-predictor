@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}?v=5.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}?v=6.0">
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" defer></script>
     <script>
       (function() {
@@ -4268,7 +4268,71 @@
         botSpeechRecognition.start();
       }
 
-      // ChatGPT Hands-Free Voice Mode Loop
+      // WEB AUDIO API AUDIO-REACTIVE ANALYSER & BARGE-IN INTERRUPT ENGINE
+      let audioCtx = null;
+      let audioAnalyser = null;
+      let audioSourceNode = null;
+      let animFrameId = null;
+
+      function initWebAudioAnalyser(stream) {
+        try {
+          stopWebAudioAnalyser();
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (!AudioContext) return;
+          audioCtx = new AudioContext();
+          audioAnalyser = audioCtx.createAnalyser();
+          audioAnalyser.fftSize = 64;
+          audioSourceNode = audioCtx.createMediaStreamSource(stream);
+          audioSourceNode.connect(audioAnalyser);
+
+          visualizeAudioWaveform();
+        } catch (e) {
+          console.warn("Web Audio Analyser init:", e);
+        }
+      }
+
+      function visualizeAudioWaveform() {
+        if (!audioAnalyser) return;
+        const dataArray = new Uint8Array(audioAnalyser.frequencyBinCount);
+        
+        function updateFrame() {
+          if (!audioAnalyser) return;
+          audioAnalyser.getByteFrequencyData(dataArray);
+
+          let sum = 0;
+          for (let i = 0; i < dataArray.length; i++) {
+            sum += dataArray[i];
+          }
+          const avgVol = sum / dataArray.length;
+          const scale = 1.0 + (avgVol / 255.0) * 0.45;
+          const glowRadius = 30 + (avgVol / 255.0) * 80;
+
+          const orb = document.getElementById('voiceOrb');
+          if (orb && orb.classList.contains('orb-listening')) {
+            orb.style.transform = `scale(${scale})`;
+            orb.style.boxShadow = `0 0 ${glowRadius}px rgba(6, 182, 212, 0.8)`;
+          }
+
+          animFrameId = requestAnimationFrame(updateFrame);
+        }
+
+        updateFrame();
+      }
+
+      function stopWebAudioAnalyser() {
+        if (animFrameId) cancelAnimationFrame(animFrameId);
+        if (audioSourceNode) {
+          try { audioSourceNode.disconnect(); } catch(e){}
+        }
+        if (audioCtx) {
+          try { audioCtx.close(); } catch(e){}
+        }
+        audioAnalyser = null;
+        audioSourceNode = null;
+        audioCtx = null;
+      }
+
+      // ChatGPT Hands-Free Voice Mode Loop with Barge-In Interruption
       function toggleHandsFreeVoiceLoop() {
         isHandsFreeVoiceLoop = !isHandsFreeVoiceLoop;
         const toggleBtn = document.getElementById('voiceOrbToggleBtn');
@@ -4279,17 +4343,31 @@
         } else {
           if (toggleBtn) toggleBtn.textContent = '🎙️ Start Listening';
           if (window.speechSynthesis) window.speechSynthesis.cancel();
+          stopWebAudioAnalyser();
           setVoiceOrbState('idle', 'Voice Mode Paused', 'Tap Start Listening to resume');
         }
       }
 
       function startHandsFreeListening() {
+        // BARGE-IN INTERRUPT: Cancel any ongoing bot speech immediately
+        if (window.speechSynthesis) window.speechSynthesis.cancel();
+
         botSpeechRecognition = initSpeechRecognition();
         if (!botSpeechRecognition) return;
 
         setVoiceOrbState('listening', 'Listening...', 'Speak your financial question out loud');
 
+        // Capture mic stream for Web Audio API visualizer
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+            initWebAudioAnalyser(stream);
+          }).catch(err => {});
+        }
+
         botSpeechRecognition.onresult = function(event) {
+          // Barge-in: cut off any speaking audio
+          if (window.speechSynthesis) window.speechSynthesis.cancel();
+
           let transcript = '';
           for (let i = event.resultIndex; i < event.results.length; i++) {
             transcript += event.results[i][0].transcript;
@@ -4299,11 +4377,17 @@
 
           if (event.results[0].isFinal) {
             botSpeechRecognition.stop();
+            stopWebAudioAnalyser();
             setVoiceOrbState('thinking', 'Analyzing Market Intelligence...', 'Querying quant scores, yFinance data, and portfolio X-Ray...');
+            
             fetch('/api/bot/chat', {
               method: 'POST',
               headers: {'Content-Type': 'application/json'},
-              body: JSON.stringify({ message: transcript })
+              body: JSON.stringify({
+                message: transcript,
+                history: storedChatMemory.slice(-6),
+                tone: activeBotTone
+              })
             })
             .then(res => res.json())
             .then(data => {
@@ -4317,6 +4401,7 @@
         };
 
         botSpeechRecognition.onerror = function() {
+          stopWebAudioAnalyser();
           if (isHandsFreeVoiceLoop) setTimeout(startHandsFreeListening, 1500);
         };
 
@@ -4344,6 +4429,7 @@
           orb.classList.add('orb-speaking');
           if (emoji) emoji.textContent = '🔊';
         } else {
+          orb.style.transform = 'scale(1.0)';
           if (emoji) emoji.textContent = '🤖';
         }
       }
