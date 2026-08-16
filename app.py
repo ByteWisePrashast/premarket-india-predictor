@@ -1032,19 +1032,7 @@ def api_bot_chat() -> Any:
     return jsonify(res)
 
 
-@app.post("/api/bot/tts")
-def api_bot_tts() -> Any:
-    data = request.get_json(silent=True) or request.form or {}
-    text = str(data.get("text") or "").strip()
-    voice = str(data.get("voice") or "en-IN-Wavenet-D").strip()
-    speed = float(data.get("speed", 0.95))
-    return jsonify({
-        "ok": True,
-        "text": text,
-        "voice": voice,
-        "speed": speed,
-        "audio_url": None
-    })
+
 
 
 @app.route("/api/portfolio/xray", methods=["GET", "POST"])
