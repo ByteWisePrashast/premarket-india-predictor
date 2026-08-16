@@ -35,6 +35,7 @@ from asset_engine import (
     get_top_crypto_watchlist,
     search_mutual_funds,
 )
+from ai_assistant import process_bot_query
 from backtest_engine import compute_live_drift, get_fallback_backtest_stats, resolve_pending_signals
 from portfolio_planner import (
     calculate_goal_inflation_calculator,
@@ -1017,6 +1018,16 @@ def api_calculator_goal_inflation() -> Any:
     horizon_years = float(data.get("horizon_years", 10.0))
     inflation_pct = float(data.get("inflation_pct", 7.0))
     res = calculate_goal_inflation_calculator(target_goal_amount=goal_amount, horizon_years=horizon_years, inflation_rate_pct=inflation_pct)
+    return jsonify(res)
+
+
+@app.post("/api/bot/chat")
+def api_bot_chat() -> Any:
+    data = request.get_json(silent=True) or request.form or {}
+    message = str(data.get("message") or "").strip()
+    history = data.get("history") or []
+    paper_portfolio = get_paper_portfolio_state()
+    res = process_bot_query(user_message=message, session_history=history, paper_portfolio=paper_portfolio)
     return jsonify(res)
 
 

@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}?v=3.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}?v=4.0">
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" defer></script>
     <script>
       (function() {
@@ -59,6 +59,9 @@
           </button>
           <button type="button" class="nav-link-btn" id="navBtnDrift" onclick="switchMainView('calibration')">
             🧪 Drift & Calibration
+          </button>
+          <button type="button" class="nav-link-btn" id="navBtnBot" onclick="switchMainView('bot')">
+            🤖 AI Co-Pilot
           </button>
         </nav>
 
@@ -2573,6 +2576,137 @@
       </div>
     </div>
 
+    <!-- ====================================================================
+         VIEW 8: AI FINANCIAL CO-PILOT BOT & CHATGPT VOICE ASSISTANT
+         ==================================================================== -->
+    <div class="main-page-section" id="viewBot">
+      <section class="bot-standalone-panel">
+        <div class="bot-header-bar">
+          <div class="bot-title-group">
+            <span class="bot-avatar">🤖</span>
+            <div>
+              <h2>AI Financial Co-Pilot Assistant</h2>
+              <p>24/7 Real-Time Quantitative Market Intelligence, Asset Recommendations, Capital Deployment & ChatGPT Voice Mode</p>
+            </div>
+          </div>
+          <div class="bot-header-controls">
+            <button type="button" class="btn btn-voice-mode-trigger" onclick="openVoiceOverlayModal()">
+              🎙️ Hands-Free ChatGPT Voice Mode
+            </button>
+            <button type="button" class="btn btn-mute-toggle" id="botTtsToggleBtn" onclick="toggleBotTts()">
+              🔊 Voice Output: ON
+            </button>
+          </div>
+        </div>
+
+        <!-- Quick Suggestion Chips -->
+        <div class="bot-suggestion-chips" id="mainBotSuggestions">
+          <span class="chip-label">Quick Ask:</span>
+          <button type="button" class="btn-bot-chip" onclick="askBotQuestion('Which mutual funds are best for 3-5 years?')">🏦 Best Mutual Funds</button>
+          <button type="button" class="btn-bot-chip" onclick="askBotQuestion('Where should I invest ₹1 Lakh right now?')">💡 Invest ₹1 Lakh</button>
+          <button type="button" class="btn-bot-chip" onclick="askBotQuestion('Is Reliance or TCS a good buy today?')">📊 Analyze Reliance / TCS</button>
+          <button type="button" class="btn-bot-chip" onclick="askBotQuestion('Which stock can I buy for 6 months?')">🚀 Top 6M Stocks</button>
+          <button type="button" class="btn-bot-chip" onclick="askBotQuestion('Analyze my portfolio risk')">🛡️ Portfolio Risk Audit</button>
+        </div>
+
+        <!-- Chat Messages Container -->
+        <div class="bot-chat-window" id="mainBotChatWindow">
+          <div class="bot-msg-bubble bot-msg-bot">
+            <div class="msg-avatar">🤖</div>
+            <div class="msg-content">
+              <div class="msg-header-tag">AI Financial Co-Pilot • Online</div>
+              <p>Hello! I am your 24/7 AI Financial Assistant. Ask me anything about Indian Stocks, Mutual Funds, ETFs, Cryptocurrencies, Goal Planning, or Capital Allocation!</p>
+              <div class="msg-sub-hint">💡 <em>Tip: Click 🎙️ below to speak your question or tap Hands-Free Voice Mode above!</em></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chat Input Bar -->
+        <div class="bot-input-bar">
+          <button type="button" class="btn-mic-record" id="mainBotMicBtn" onclick="toggleBotSpeechRecognition('main')" title="Click to speak your question">
+            🎙️
+          </button>
+          <input type="text" id="mainBotInputText" class="bot-text-input" placeholder="Ask anything (e.g., 'Which mutual funds are best?', 'Where to invest ₹2 Lakhs?')..." onkeydown="if(event.key==='Enter') sendMainBotMessage()">
+          <button type="button" class="btn btn-primary" onclick="sendMainBotMessage()">
+            ⚡ Send
+          </button>
+        </div>
+      </section>
+    </div>
+
+    <!-- ====================================================================
+         FLOATING SLIDE-OVER AI CO-PILOT CHAT WIDGET
+         ==================================================================== -->
+    <div class="floating-bot-launcher" id="floatingBotLauncher" onclick="toggleFloatingBotModal()">
+      <span class="fbl-icon">🤖</span>
+      <span class="fbl-label">AI Co-Pilot</span>
+      <span class="fbl-badge-pulse"></span>
+    </div>
+
+    <div class="floating-bot-modal hidden" id="floatingBotModal">
+      <div class="fbm-header">
+        <div class="fbm-title">
+          <span class="fbm-icon">🤖</span>
+          <div>
+            <h4>AI Financial Co-Pilot</h4>
+            <span class="font-xs" style="color: #10b981;">● Online & Voice Ready</span>
+          </div>
+        </div>
+        <div class="fbm-controls">
+          <button type="button" class="fbm-btn-icon" onclick="openVoiceOverlayModal()" title="Start ChatGPT Voice Mode">🎙️</button>
+          <button type="button" class="fbm-btn-icon" onclick="toggleBotTts()" id="floatTtsBtn" title="Toggle Voice Output">🔊</button>
+          <button type="button" class="fbm-btn-close" onclick="toggleFloatingBotModal()">✕</button>
+        </div>
+      </div>
+
+      <div class="fbm-body" id="floatingBotChatWindow">
+        <div class="bot-msg-bubble bot-msg-bot">
+          <div class="msg-avatar">🤖</div>
+          <div class="msg-content">
+            <p>How can I help with your investments today? Ask for best MFs, stock entry levels, or capital allocation!</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="fbm-footer">
+        <div class="fbm-input-row">
+          <button type="button" class="btn-mic-record" id="floatBotMicBtn" onclick="toggleBotSpeechRecognition('float')">🎙️</button>
+          <input type="text" id="floatBotInputText" class="bot-text-input" placeholder="Ask AI Co-Pilot..." onkeydown="if(event.key==='Enter') sendFloatBotMessage()">
+          <button type="button" class="btn btn-primary btn-sm" onclick="sendFloatBotMessage()">Send</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====================================================================
+         CHATGPT-STYLE HANDS-FREE VOICE MODE OVERLAY MODAL
+         ==================================================================== -->
+    <div class="voice-overlay-modal hidden" id="voiceOverlayModal">
+      <button type="button" class="btn-close-voice-overlay" onclick="closeVoiceOverlayModal()">✕ Exit Voice Mode</button>
+      
+      <div class="voice-orb-container">
+        <div class="voice-orb-pulse" id="voiceOrb">
+          <span class="vo-emoji" id="voiceOrbEmoji">🎙️</span>
+        </div>
+        <h3 class="voice-status-title" id="voiceStatusTitle">Tap Orb to Start Speaking</h3>
+        <p class="voice-status-sub" id="voiceStatusSub">Hands-Free Conversational AI Assistant (ChatGPT Voice)</p>
+      </div>
+
+      <div class="voice-live-transcript-box" id="voiceTranscriptBox">
+        <p id="voiceTranscriptText">Say: "Which mutual funds or stocks should I buy?"</p>
+      </div>
+
+      <div class="voice-controls-row">
+        <button type="button" class="btn-voice-control" id="voiceOrbToggleBtn" onclick="toggleHandsFreeVoiceLoop()">
+          🎙️ Start Listening
+        </button>
+        <button type="button" class="btn-voice-control" onclick="toggleBotTts()">
+          🔊 Mute / Unmute
+        </button>
+      </div>
+    </div>
+      </div>
+    </div>
+
     <!-- Client-side script for master views, daily picks filters, calculators, planner, and holdings -->
     <script>
       function switchMainView(viewName) {
@@ -3674,6 +3808,315 @@
       {% if searched_query %}
         switchMainView('evaluator');
       {% endif %}
+
+      // ====================================================================
+      // AI FINANCIAL CO-PILOT BOT & CHATGPT VOICE ENGINE CONTROLLER
+      // ====================================================================
+      let botTtsEnabled = true;
+      let botSpeechRecognition = null;
+      let isBotRecognizing = false;
+      let isHandsFreeVoiceLoop = false;
+
+      function toggleFloatingBotModal() {
+        const modal = document.getElementById('floatingBotModal');
+        if (modal) modal.classList.toggle('hidden');
+      }
+
+      function openVoiceOverlayModal() {
+        const modal = document.getElementById('voiceOverlayModal');
+        if (modal) modal.classList.remove('hidden');
+      }
+
+      function closeVoiceOverlayModal() {
+        const modal = document.getElementById('voiceOverlayModal');
+        if (modal) modal.classList.add('hidden');
+        if (window.speechSynthesis) window.speechSynthesis.cancel();
+        isHandsFreeVoiceLoop = false;
+        setVoiceOrbState('idle', 'Tap Orb to Start Speaking', 'Say: "Which mutual funds or stocks should I buy?"');
+      }
+
+      function toggleBotTts() {
+        botTtsEnabled = !botTtsEnabled;
+        const mainBtn = document.getElementById('botTtsToggleBtn');
+        const floatBtn = document.getElementById('floatTtsBtn');
+        if (mainBtn) mainBtn.textContent = botTtsEnabled ? '🔊 Voice Output: ON' : '🔇 Voice Output: OFF';
+        if (floatBtn) floatBtn.textContent = botTtsEnabled ? '🔊' : '🔇';
+        if (!botTtsEnabled && window.speechSynthesis) {
+          window.speechSynthesis.cancel();
+        }
+      }
+
+      function speakBotResponse(text) {
+        if (!botTtsEnabled || !('speechSynthesis' in window)) return;
+        window.speechSynthesis.cancel();
+
+        const cleanText = text.replace(/#|[*_`~>|-]/g, ' ').replace(/\s+/g, ' ').trim();
+        const utterance = new SpeechSynthesisUtterance(cleanText);
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+
+        const voices = window.speechSynthesis.getVoices();
+        const indVoice = voices.find(v => v.lang.includes('en-IN') || v.name.includes('India')) || voices.find(v => v.lang.includes('en'));
+        if (indVoice) utterance.voice = indVoice;
+
+        utterance.onstart = function() {
+          setVoiceOrbState('speaking', 'AI Assistant Speaking...', cleanText.slice(0, 100) + '...');
+        };
+
+        utterance.onend = function() {
+          if (isHandsFreeVoiceLoop) {
+            setTimeout(startHandsFreeListening, 600);
+          } else {
+            setVoiceOrbState('idle', 'Tap Orb to Start Speaking', 'Ask your next financial question...');
+          }
+        };
+
+        window.speechSynthesis.speak(utterance);
+      }
+
+      function renderBotMarkdown(mdText) {
+        if (!mdText) return '';
+        let html = mdText
+          .replace(/### (.*?)\n/g, '<h4 class="bot-heading">$1</h4>')
+          .replace(/#### (.*?)\n/g, '<h5 class="bot-subheading">$1</h5>')
+          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+          .replace(/`(.*?)`/g, '<code class="bot-code-pill">$1</code>')
+          .replace(/\n- (.*?)/g, '<br>• $1')
+          .replace(/\n\n/g, '<br><br>');
+        return html;
+      }
+
+      function renderBotAssetCards(cards) {
+        if (!cards || !cards.length) return '';
+        let html = '<div class="bot-cards-grid">';
+        cards.forEach(c => {
+          html += `
+            <div class="bot-asset-card">
+              <div class="bac-top">
+                <span class="bac-name">${c.name}</span>
+                <span class="score-badge score-badge-${c.badge || 'buy'}">${c.score}/100</span>
+              </div>
+              <div class="bac-mid font-mono">
+                <span>Price/NAV: <strong>${c.price}</strong></span>
+                <span class="positive">${c.change_pct}</span>
+              </div>
+              <div class="bac-actions">
+                <a href="/?symbol=${encodeURIComponent(c.symbol)}" class="btn btn-sm btn-refresh" style="font-size: 11px; padding: 3px 8px;">360° Dossier</a>
+                <button type="button" class="btn btn-sm btn-primary" onclick="openBuyModal('${c.symbol}', '${c.name.replace(/'/g, "\\'")}', '${c.price.replace(/[^0-9.]/g, '') || '1000'}')" style="font-size: 11px; padding: 3px 8px;">Paper Buy</button>
+              </div>
+            </div>
+          `;
+        });
+        html += '</div>';
+        return html;
+      }
+
+      function appendBotMessage(targetWindowId, sender, text, cards, suggestions) {
+        const win = document.getElementById(targetWindowId);
+        if (!win) return;
+
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `bot-msg-bubble ${sender === 'user' ? 'bot-msg-user' : 'bot-msg-bot'}`;
+
+        if (sender === 'user') {
+          msgDiv.innerHTML = `
+            <div class="msg-avatar">👤</div>
+            <div class="msg-content"><p>${text}</p></div>
+          `;
+        } else {
+          let contentHtml = `<div class="msg-avatar">🤖</div><div class="msg-content">`;
+          contentHtml += `<div class="msg-header-tag">AI Financial Co-Pilot</div>`;
+          contentHtml += renderBotMarkdown(text);
+          if (cards && cards.length) {
+            contentHtml += renderBotAssetCards(cards);
+          }
+          if (suggestions && suggestions.length) {
+            contentHtml += `<div class="bot-msg-suggestions">`;
+            suggestions.forEach(s => {
+              contentHtml += `<button type="button" class="btn-bot-chip" onclick="askBotQuestion('${s.replace(/'/g, "\\'")}')">${s}</button>`;
+            });
+            contentHtml += `</div>`;
+          }
+          contentHtml += `</div>`;
+          msgDiv.innerHTML = contentHtml;
+        }
+
+        win.appendChild(msgDiv);
+        win.scrollTop = win.scrollHeight;
+      }
+
+      function sendMainBotMessage() {
+        const input = document.getElementById('mainBotInputText');
+        const text = input ? input.value.trim() : '';
+        if (!text) return;
+
+        appendBotMessage('mainBotChatWindow', 'user', text);
+        input.value = '';
+        fetchBotResponse(text, 'mainBotChatWindow');
+      }
+
+      function sendFloatBotMessage() {
+        const input = document.getElementById('floatBotInputText');
+        const text = input ? input.value.trim() : '';
+        if (!text) return;
+
+        appendBotMessage('floatingBotChatWindow', 'user', text);
+        input.value = '';
+        fetchBotResponse(text, 'floatingBotChatWindow');
+      }
+
+      function askBotQuestion(question) {
+        switchMainView('bot');
+        appendBotMessage('mainBotChatWindow', 'user', question);
+        fetchBotResponse(question, 'mainBotChatWindow');
+      }
+
+      function fetchBotResponse(userMsg, windowId) {
+        fetch('/api/bot/chat', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ message: userMsg })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.ok) {
+            appendBotMessage(windowId, 'bot', data.text, data.cards, data.suggestions);
+            speakBotResponse(data.text);
+          }
+        })
+        .catch(err => console.error("Bot API error:", err));
+      }
+
+      // Speech Recognition Handler
+      function initSpeechRecognition() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) return null;
+        const rec = new SpeechRecognition();
+        rec.continuous = false;
+        rec.interimResults = true;
+        rec.lang = 'en-US';
+        return rec;
+      }
+
+      function toggleBotSpeechRecognition(mode) {
+        botSpeechRecognition = initSpeechRecognition();
+        if (!botSpeechRecognition) {
+          alert("Web Speech API is not supported in this browser. Please type your message.");
+          return;
+        }
+
+        const micBtn = mode === 'main' ? document.getElementById('mainBotMicBtn') : document.getElementById('floatBotMicBtn');
+        const inputEl = mode === 'main' ? document.getElementById('mainBotInputText') : document.getElementById('floatBotInputText');
+
+        if (isBotRecognizing) {
+          botSpeechRecognition.stop();
+          isBotRecognizing = false;
+          if (micBtn) micBtn.classList.remove('recording');
+          return;
+        }
+
+        isBotRecognizing = true;
+        if (micBtn) micBtn.classList.add('recording');
+
+        botSpeechRecognition.onresult = function(event) {
+          let transcript = '';
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            transcript += event.results[i][0].transcript;
+          }
+          if (inputEl) inputEl.value = transcript;
+        };
+
+        botSpeechRecognition.onend = function() {
+          isBotRecognizing = false;
+          if (micBtn) micBtn.classList.remove('recording');
+          if (inputEl && inputEl.value.trim()) {
+            if (mode === 'main') sendMainBotMessage();
+            else sendFloatBotMessage();
+          }
+        };
+
+        botSpeechRecognition.start();
+      }
+
+      // ChatGPT Hands-Free Voice Mode Loop
+      function toggleHandsFreeVoiceLoop() {
+        isHandsFreeVoiceLoop = !isHandsFreeVoiceLoop;
+        const toggleBtn = document.getElementById('voiceOrbToggleBtn');
+
+        if (isHandsFreeVoiceLoop) {
+          if (toggleBtn) toggleBtn.textContent = '⏸️ Pause Voice Mode';
+          startHandsFreeListening();
+        } else {
+          if (toggleBtn) toggleBtn.textContent = '🎙️ Start Listening';
+          if (window.speechSynthesis) window.speechSynthesis.cancel();
+          setVoiceOrbState('idle', 'Voice Mode Paused', 'Tap Start Listening to resume');
+        }
+      }
+
+      function startHandsFreeListening() {
+        botSpeechRecognition = initSpeechRecognition();
+        if (!botSpeechRecognition) return;
+
+        setVoiceOrbState('listening', 'Listening...', 'Speak your financial question out loud');
+
+        botSpeechRecognition.onresult = function(event) {
+          let transcript = '';
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            transcript += event.results[i][0].transcript;
+          }
+          const txBox = document.getElementById('voiceTranscriptText');
+          if (txBox) txBox.textContent = `You: "${transcript}"`;
+
+          if (event.results[0].isFinal) {
+            botSpeechRecognition.stop();
+            setVoiceOrbState('thinking', 'Analyzing Market Intelligence...', 'Querying quant scores, yFinance data, and portfolio X-Ray...');
+            fetch('/api/bot/chat', {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({ message: transcript })
+            })
+            .then(res => res.json())
+            .then(data => {
+              if (data && data.ok) {
+                appendBotMessage('mainBotChatWindow', 'user', transcript);
+                appendBotMessage('mainBotChatWindow', 'bot', data.text, data.cards, data.suggestions);
+                speakBotResponse(data.text);
+              }
+            });
+          }
+        };
+
+        botSpeechRecognition.onerror = function() {
+          if (isHandsFreeVoiceLoop) setTimeout(startHandsFreeListening, 1500);
+        };
+
+        botSpeechRecognition.start();
+      }
+
+      function setVoiceOrbState(state, title, sub) {
+        const orb = document.getElementById('voiceOrb');
+        const emoji = document.getElementById('voiceOrbEmoji');
+        const tEl = document.getElementById('voiceStatusTitle');
+        const sEl = document.getElementById('voiceStatusSub');
+
+        if (tEl) tEl.textContent = title;
+        if (sEl) sEl.textContent = sub;
+
+        if (!orb) return;
+        orb.className = 'voice-orb-pulse';
+        if (state === 'listening') {
+          orb.classList.add('orb-listening');
+          if (emoji) emoji.textContent = '🎙️';
+        } else if (state === 'thinking') {
+          orb.classList.add('orb-thinking');
+          if (emoji) emoji.textContent = '⚙️';
+        } else if (state === 'speaking') {
+          orb.classList.add('orb-speaking');
+          if (emoji) emoji.textContent = '🔊';
+        } else {
+          if (emoji) emoji.textContent = '🤖';
+        }
+      }
     </script>
   </body>
 </html>
