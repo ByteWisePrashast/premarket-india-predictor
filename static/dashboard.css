@@ -3519,6 +3519,9 @@ body {
   border-radius: var(--radius-lg);
   padding: 20px;
   box-shadow: var(--shadow-md);
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .scanner-header {
@@ -3527,17 +3530,22 @@ body {
   align-items: center;
   gap: 16px;
   flex-wrap: wrap;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .scanner-title-group {
   display: flex;
   align-items: center;
   gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .scanner-icon {
   font-size: 26px;
+  flex-shrink: 0;
 }
 
 .scanner-title-group h3 {
@@ -3551,34 +3559,49 @@ body {
   margin: 2px 0 0 0;
   font-size: 12px;
   color: var(--text-muted);
+  line-height: 1.45;
 }
 
 .scanner-quick-samples {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
+  margin-bottom: 16px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .sample-label {
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: 600;
   color: var(--text-dim);
+  white-space: nowrap;
 }
 
 .btn-sample-chip {
-  background: var(--panel-card);
+  background: var(--bg-card);
   border: 1px solid var(--line);
   color: var(--text);
-  padding: 5px 10px;
+  padding: 6px 12px;
   border-radius: 6px;
   font-size: 11.5px;
+  font-weight: 500;
   cursor: pointer;
+  white-space: nowrap;
   transition: all 0.2s ease;
+}
+
+[data-theme="light"] .btn-sample-chip {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #0f172a;
 }
 
 .btn-sample-chip:hover {
   border-color: var(--accent);
   color: var(--accent);
+  transform: translateY(-1px);
 }
 
 /* Dropzone */

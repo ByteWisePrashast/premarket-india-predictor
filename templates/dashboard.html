@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}?v=2.7">
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}?v=2.8">
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" defer></script>
     <script>
       (function() {
@@ -1901,12 +1901,13 @@
                   <p>Upload, drag & drop, or paste (<kbd>Ctrl+V</kbd> / <kbd>Cmd+V</kbd>) a screenshot of your Mutual Funds, Stocks, or ETFs from Zerodha, Groww, INDmoney, Kuvera, or CAMS.</p>
                 </div>
               </div>
-              <div class="scanner-quick-samples">
-                <span class="sample-label">Try Sample:</span>
-                <button type="button" class="btn btn-sample-chip" onclick="loadSampleStatement('mf')">🏦 Mutual Funds Basket</button>
-                <button type="button" class="btn btn-sample-chip" onclick="loadSampleStatement('crypto')">🪙 Crypto Wallet</button>
-                <button type="button" class="btn btn-sample-chip" onclick="loadSampleStatement('mixed')">📊 Mixed Portfolio</button>
-              </div>
+            </div>
+
+            <div class="scanner-quick-samples">
+              <span class="sample-label">Try Sample:</span>
+              <button type="button" class="btn btn-sample-chip" onclick="loadSampleStatement('mf')">🏦 Mutual Funds Basket</button>
+              <button type="button" class="btn btn-sample-chip" onclick="loadSampleStatement('crypto')">🪙 Crypto Wallet</button>
+              <button type="button" class="btn btn-sample-chip" onclick="loadSampleStatement('mixed')">📊 Mixed Portfolio</button>
             </div>
 
             <!-- Dropzone Box -->
