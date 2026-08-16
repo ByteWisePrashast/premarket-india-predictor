@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}?v=11.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}?v=12.0">
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" defer></script>
     <script>
       (function() {
@@ -2672,10 +2672,6 @@
         <div class="fbm-input-row">
           <input type="text" id="floatBotInputText" class="bot-text-input" placeholder="Ask PreMarket Assistant..." onkeydown="if(event.key==='Enter') sendFloatBotMessage()">
           <button type="button" class="btn btn-primary btn-sm" onclick="sendFloatBotMessage()">Send</button>
-        </div>
-      </div>
-    </div>
-      </div>
     </div>
 
     <!-- Client-side script for master views, daily picks filters, calculators, planner, and holdings -->
@@ -4002,36 +3998,6 @@
         });
         html += '</div>';
         return html;
-      }
-
-        const msgDiv = document.createElement('div');
-        msgDiv.className = `bot-msg-bubble ${sender === 'user' ? 'bot-msg-user' : 'bot-msg-bot'}`;
-
-        if (sender === 'user') {
-          msgDiv.innerHTML = `
-            <div class="msg-avatar">👤</div>
-            <div class="msg-content"><p>${text}</p></div>
-          `;
-        } else {
-          let contentHtml = `<div class="msg-avatar">✨</div><div class="msg-content">`;
-          contentHtml += `<div class="msg-header-tag">AI Financial Co-Pilot</div>`;
-          contentHtml += renderBotMarkdown(text);
-          if (cards && cards.length) {
-            contentHtml += renderBotAssetCards(cards);
-          }
-          if (suggestions && suggestions.length) {
-            contentHtml += `<div class="bot-msg-suggestions">`;
-            suggestions.forEach(s => {
-              contentHtml += `<button type="button" class="btn-bot-chip" onclick="askBotQuestion('${s.replace(/'/g, "\\'")}')">${s}</button>`;
-            });
-            contentHtml += `</div>`;
-          }
-          contentHtml += `</div>`;
-          msgDiv.innerHTML = contentHtml;
-        }
-
-        win.appendChild(msgDiv);
-        win.scrollTop = win.scrollHeight;
       }
 
       function sendMainBotMessage() {
