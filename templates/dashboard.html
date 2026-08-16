@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}?v=9.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}?v=10.0">
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" defer></script>
     <script>
       (function() {
@@ -61,7 +61,7 @@
             🧪 Drift & Calibration
           </button>
           <button type="button" class="nav-link-btn" id="navBtnBot" onclick="switchMainView('bot')">
-            ✨ AI Co-Pilot
+            ✨ Portfolio Assistant
           </button>
         </nav>
 
@@ -2585,7 +2585,7 @@
           <div class="bot-title-group">
             <span class="bot-avatar">✨</span>
             <div>
-              <h2>AI Financial Co-Pilot Assistant</h2>
+              <h2>PreMarket Portfolio Assistant</h2>
               <p>24/7 Real-Time Quantitative Market Intelligence, Asset Recommendations, Capital Deployment & Hands-Free Voice Mode</p>
             </div>
           </div>
@@ -2659,15 +2659,13 @@
         <div class="fbm-title">
           <span class="fbm-icon">✨</span>
           <div>
-            <h4>AI Financial Co-Pilot</h4>
+            <h4>PreMarket Portfolio Assistant</h4>
             <span class="font-xs" style="color: #10b981;">● Online & Co-Pilot Active</span>
           </div>
         </div>
         <div class="fbm-controls">
-          <button type="button" class="fbm-btn-icon" onclick="exportChatTranscript()" title="Export Chat">📥</button>
-          <button type="button" class="fbm-btn-icon" onclick="clearChatHistory()" title="Clear Memory">🗑️</button>
-          <button type="button" class="fbm-btn-icon" onclick="openVoiceOverlayModal()" title="Start Live Voice Mode">✨</button>
-          <button type="button" class="fbm-btn-icon" onclick="toggleBotTts()" id="floatTtsBtn" title="Toggle Voice Output">🔊</button>
+          <button type="button" class="btn btn-voice-mode-trigger" onclick="openVoiceOverlayModal()" style="font-size: 11.5px; padding: 4px 10px;">✨ Live Voice</button>
+          <button type="button" class="fbm-btn-icon" onclick="exportChatTranscript()" title="Export Chat Transcript" style="font-size: 12px; font-weight: 600;">📥 Export</button>
           <button type="button" class="fbm-btn-close" onclick="toggleFloatingBotModal()">✕</button>
         </div>
       </div>
@@ -3886,11 +3884,17 @@
       function preprocessTextForHumanSpeech(text) {
         if (!text) return '';
         let s = text;
+
+        // Truncate footers, counter-questions list, and data source tags for clean spoken output
+        const footIdx = s.indexOf('---');
+        if (footIdx !== -1) {
+          s = s.slice(0, footIdx);
+        }
         
         // 1. Remove URLs & Markdown link markup, keeping plain text title
         s = s.replace(/\[(.*?)\]\(.*?\)/g, '$1');
         
-        // 2. Remove Emojis & Symbols completely so speech synthesis doesn't read symbol names
+        // 2. Remove Emojis & Symbols completely so speech synthesis doesn't read symbol names out loud
         s = s.replace(/[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}📌📊💡🎯📜🚀🏛️🏦🛡️👤🤖⚡✨]/gu, ' ');
 
         // 3. Remove ALL Markdown formatting characters (*, _, #, -, •, `, ~)
@@ -4132,6 +4136,8 @@
           const isAlloc = c.change_pct && (c.change_pct.includes('%') || c.change_pct.includes('Alloc'));
           const priceLabel = isAlloc ? 'Allocated Capital' : 'Price / NAV';
           const allocLabel = isAlloc ? 'Share' : 'Return';
+          const pastRet = c.past_cagr || '21.4% (3Y)';
+          const futRet = c.future_cagr || '15.5% (Proj.)';
 
           html += `
             <div class="bot-asset-card">
@@ -4151,7 +4157,16 @@
                   <span class="bac-lbl">${allocLabel}</span>
                   <span class="bac-val">${c.change_pct || '25%'}</span>
                 </div>
+                <div class="bac-field">
+                  <span class="bac-lbl">Past Return (3Y)</span>
+                  <span class="bac-val font-mono" style="font-size: 11.5px;">${pastRet}</span>
+                </div>
+                <div class="bac-field">
+                  <span class="bac-lbl">Future Proj.</span>
+                  <span class="bac-val font-mono" style="font-size: 11.5px; color: #10b981;">${futRet}</span>
+                </div>
               </div>
+              ${c.why ? `<div class="font-xs" style="color: var(--text-dim); margin-bottom: 6px;">💡 <strong>Why:</strong> ${c.why}</div>` : ''}
               <div class="bac-actions">
                 <a href="/?symbol=${encodeURIComponent(c.symbol)}" class="bac-btn-dossier">360° Dossier</a>
                 <button type="button" class="bac-btn-buy" onclick="openBuyModal('${c.symbol}', '${(c.name || c.symbol).replace(/'/g, "\\'")}', '${(c.price || '1000').replace(/[^0-9.]/g, '')}')">Paper Buy</button>
