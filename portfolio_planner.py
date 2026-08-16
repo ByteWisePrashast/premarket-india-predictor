@@ -253,6 +253,191 @@ def calculate_lump_sum_calculator(
 
 
 # ============================================================================
+# 3.5. GOAL-TARGETED INFLATION-ADJUSTED WEALTH & ASSET ALLOCATION CALCULATOR
+# ============================================================================
+
+def calculate_goal_inflation_calculator(
+    target_goal_amount: float = 50000000.0,  # Default ₹5 Crore
+    horizon_years: float = 10.0,              # Default 10 Years
+    inflation_rate_pct: float = 7.0,          # Default 7% p.a.
+) -> dict[str, Any]:
+    """
+    Calculates inflation-adjusted future corpus required to reach a specific financial goal (e.g. ₹5 Cr in 10Y),
+    and computes the required Monthly SIP, Lump Sum, and Asset Allocation Baskets across 4 Risk Profile Scenarios:
+    1. Low Risk / Capital Preservation (9.5% CAGR)
+    2. Moderate Risk / Balanced Compounder (14.5% CAGR)
+    3. Aggressive Risk / High-Alpha Growth (18.5% CAGR)
+    4. Multi-Asset Step-Up Strategy (16.0% CAGR + 10% Step-Up)
+    """
+    goal = max(100000.0, float(target_goal_amount))
+    years = max(1.0, float(horizon_years))
+    inf_pct = max(0.0, float(inflation_rate_pct))
+    total_months = int(years * 12)
+
+    # Inflation Multiplier & Real Required Maturity Corpus
+    inf_multiplier = (1.0 + (inf_pct / 100.0)) ** years
+    required_corpus_future = goal * inf_multiplier
+    inflation_extra_needed = required_corpus_future - goal
+
+    # Define 4 Risk Profile Scenarios
+    profiles_config = [
+        {
+            "id": "low_risk",
+            "name": "Low Risk / Capital Preservation",
+            "icon": "🛡️",
+            "badge": "conservative",
+            "cagr": 9.5,
+            "description": "Focuses on high-liquidity, sovereign security, and passive blue-chip stability with minimal volatility.",
+            "asset_mix": [
+                {"name": "UTI Nifty 50 Index Fund - Direct Growth", "symbol": "MF_120716", "category": "Large Cap Index", "pct": 30.0, "nav": 172.40},
+                {"name": "HDFC Arbitrage Fund / Liquid Direct", "symbol": "MF_118989", "category": "Arbitrage / Liquid", "pct": 40.0, "nav": 482.10},
+                {"name": "Nippon India ETF Gold BeES (GOLDBEES)", "symbol": "GOLDBEES", "category": "Sovereign Gold ETF", "pct": 30.0, "nav": 62.50},
+            ]
+        },
+        {
+            "id": "moderate_risk",
+            "name": "Moderate Risk / Balanced Compounder",
+            "icon": "⚖️",
+            "badge": "moderate",
+            "cagr": 14.5,
+            "description": "Optimal balance of multi-cap equity growth, mid-cap opportunities, and dynamic downside protection.",
+            "asset_mix": [
+                {"name": "Parag Parikh Flexi Cap Fund - Direct Growth", "symbol": "MF_122639", "category": "Flexi Cap Equity", "pct": 40.0, "nav": 91.68},
+                {"name": "HDFC Mid-Cap Opportunities Fund", "symbol": "MF_118968", "category": "Mid Cap Equity", "pct": 30.0, "nav": 185.40},
+                {"name": "HDFC Balanced Advantage Fund - Direct Growth", "symbol": "MF_118989", "category": "Dynamic Asset Allocation", "pct": 30.0, "nav": 482.10},
+            ]
+        },
+        {
+            "id": "aggressive_risk",
+            "name": "Aggressive Risk / High-Alpha Growth",
+            "icon": "🚀",
+            "badge": "aggressive",
+            "cagr": 18.5,
+            "description": "High-velocity wealth acceleration targeting small-cap momentum, mid-cap compounding, and global tech leaders.",
+            "asset_mix": [
+                {"name": "Quant Small Cap Fund - Direct Growth", "symbol": "MF_120828", "category": "Small Cap High Growth", "pct": 25.0, "nav": 264.50},
+                {"name": "Nippon India Small Cap Fund - Direct Growth", "symbol": "MF_118778", "category": "Small Cap High Growth", "pct": 20.0, "nav": 184.20},
+                {"name": "Motilal Oswal Midcap Fund - Direct Growth", "symbol": "MF_127042", "category": "Mid Cap Compounder", "pct": 35.0, "nav": 92.10},
+                {"name": "Mirae Asset NYSE FANG+ ETF (MAFANG)", "symbol": "MAFANG", "category": "Global Tech Leaders", "pct": 20.0, "nav": 98.40},
+            ]
+        },
+        {
+            "id": "step_up_blend",
+            "name": "Multi-Asset Step-Up Strategy (10% Top-Up)",
+            "icon": "🌟",
+            "badge": "stepup",
+            "cagr": 16.0,
+            "is_step_up": True,
+            "step_up_pct": 10.0,
+            "description": "Starts with a lower monthly commitment and steps up by 10% each year, perfectly aligning with annual salary increments.",
+            "asset_mix": [
+                {"name": "Parag Parikh Flexi Cap Fund - Direct Growth", "symbol": "MF_122639", "category": "Flexi Cap Equity", "pct": 35.0, "nav": 91.68},
+                {"name": "Quant Small Cap Fund - Direct Growth", "symbol": "MF_120828", "category": "Small Cap High Growth", "pct": 25.0, "nav": 264.50},
+                {"name": "HDFC Balanced Advantage Fund - Direct Growth", "symbol": "MF_118989", "category": "Dynamic Asset Allocation", "pct": 20.0, "nav": 482.10},
+                {"name": "UTI Nifty 50 Index Fund - Direct Growth", "symbol": "MF_120716", "category": "Large Cap Index", "pct": 20.0, "nav": 172.40},
+            ]
+        }
+    ]
+
+    scenarios = {}
+    for cfg in profiles_config:
+        r_ann = cfg["cagr"]
+        i_monthly = (r_ann / 100.0) / 12.0
+
+        if cfg.get("is_step_up"):
+            step_up = cfg.get("step_up_pct", 10.0) / 100.0
+            factor_sum = 0.0
+            for y_idx in range(int(years)):
+                mult_y = (1.0 + step_up) ** y_idx
+                for m_idx in range(1, 13):
+                    m_rem = total_months - (y_idx * 12 + m_idx) + 1
+                    factor_sum += mult_y * ((1.0 + i_monthly) ** m_rem)
+            
+            req_monthly_sip = required_corpus_future / factor_sum if factor_sum > 0 else 0.0
+            req_lumpsum = required_corpus_future / ((1.0 + (r_ann / 100.0)) ** years)
+        else:
+            denom = (((1.0 + i_monthly) ** total_months - 1.0) / i_monthly) * (1.0 + i_monthly)
+            req_monthly_sip = required_corpus_future / denom if denom > 0 else 0.0
+            req_lumpsum = required_corpus_future / ((1.0 + (r_ann / 100.0)) ** years)
+
+        buy_sheet = []
+        for a in cfg["asset_mix"]:
+            alloc_rupees = req_monthly_sip * (a["pct"] / 100.0)
+            qty = max(1, int(round(alloc_rupees / a["nav"]))) if a["nav"] > 0 else 1
+            buy_sheet.append({
+                "asset_name": a["name"],
+                "symbol": a["symbol"],
+                "category": a["category"],
+                "allocation_pct": f"{a['pct']:.1f}%",
+                "allocation_pct_num": a["pct"],
+                "monthly_rupees": fmt_curr(alloc_rupees),
+                "monthly_rupees_num": alloc_rupees,
+                "price": fmt_curr(a["nav"]),
+                "qty": qty,
+            })
+
+        yearly_schedule = []
+        p_curr = req_monthly_sip
+        accum_fv = 0.0
+        accum_inv = 0.0
+
+        for y in range(1, int(years) + 1):
+            if cfg.get("is_step_up") and y > 1:
+                p_curr = p_curr * (1.0 + (cfg.get("step_up_pct", 10.0) / 100.0))
+            
+            for m in range(12):
+                accum_inv += p_curr
+                accum_fv = (accum_fv + p_curr) * (1.0 + i_monthly)
+
+            yearly_schedule.append({
+                "year": y,
+                "monthly_sip": fmt_curr(p_curr),
+                "total_invested": fmt_curr(accum_inv),
+                "total_invested_num": accum_inv,
+                "future_value": fmt_curr(accum_fv),
+                "future_value_num": accum_fv,
+                "wealth_gain": fmt_curr(accum_fv - accum_inv),
+            })
+
+        chart_svg = make_trajectory_chart_svg(yearly_schedule, mode="step_up" if cfg.get("is_step_up") else "sip")
+
+        scenarios[cfg["id"]] = {
+            "id": cfg["id"],
+            "name": cfg["name"],
+            "icon": cfg["icon"],
+            "badge": cfg["badge"],
+            "expected_cagr": f"{r_ann:.1f}%",
+            "expected_cagr_num": r_ann,
+            "description": cfg["description"],
+            "req_monthly_sip": fmt_curr(req_monthly_sip),
+            "req_monthly_sip_num": req_monthly_sip,
+            "req_lumpsum": fmt_curr(req_lumpsum),
+            "req_lumpsum_num": req_lumpsum,
+            "is_step_up": cfg.get("is_step_up", False),
+            "step_up_pct": f"{cfg.get('step_up_pct', 0):.0f}%" if cfg.get("is_step_up") else "0%",
+            "buy_sheet": buy_sheet,
+            "yearly_schedule": yearly_schedule,
+            "chart_svg": chart_svg,
+        }
+
+    return {
+        "ok": True,
+        "type": "goal_inflation",
+        "target_goal_amount": fmt_curr(goal),
+        "target_goal_amount_num": goal,
+        "horizon_years": f"{years:.0f} Years",
+        "horizon_years_num": years,
+        "inflation_rate_pct": f"{inf_pct:.1f}%",
+        "inflation_rate_pct_num": inf_pct,
+        "inflation_multiplier": f"{inf_multiplier:.2f}x",
+        "required_corpus_future": fmt_curr(required_corpus_future),
+        "required_corpus_future_num": required_corpus_future,
+        "inflation_extra_needed": fmt_curr(inflation_extra_needed),
+        "scenarios": scenarios,
+    }
+
+
+# ============================================================================
 # 4. CUSTOMIZABLE CAPITAL-BASED MULTI-ASSET PORTFOLIO RECOMMENDER
 # ============================================================================
 

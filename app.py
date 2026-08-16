@@ -37,6 +37,7 @@ from asset_engine import (
 )
 from backtest_engine import compute_live_drift, get_fallback_backtest_stats, resolve_pending_signals
 from portfolio_planner import (
+    calculate_goal_inflation_calculator,
     calculate_lump_sum_calculator,
     calculate_regular_sip,
     calculate_step_up_sip,
@@ -784,6 +785,7 @@ def index() -> str:
     default_calc_sip = calculate_regular_sip(monthly_amount=10000.0, annual_return_pct=14.0, horizon_years=10.0)
     default_calc_step_up = calculate_step_up_sip(initial_monthly_amount=10000.0, annual_step_up_pct=10.0, annual_return_pct=14.0, horizon_years=10.0)
     default_calc_lump_sum = calculate_lump_sum_calculator(principal_amount=500000.0, annual_return_pct=14.0, horizon_years=10.0, inflation_rate_pct=6.0)
+    default_calc_goal_inflation = calculate_goal_inflation_calculator(target_goal_amount=50000000.0, horizon_years=10.0, inflation_rate_pct=7.0)
 
     # Portfolio Health & Holistic Diagnostic X-Ray
     portfolio_xray = audit_portfolio_system(
@@ -836,6 +838,7 @@ def index() -> str:
         calc_sip=default_calc_sip,
         calc_step_up=default_calc_step_up,
         calc_lump_sum=default_calc_lump_sum,
+        calc_goal_inflation=default_calc_goal_inflation,
         popular_suggestions=POPULAR_SUGGESTIONS,
     )
 
@@ -1004,6 +1007,16 @@ def api_calculator_lumpsum() -> Any:
     horizon_years = float(data.get("horizon_years", 10.0))
     inflation_pct = float(data.get("inflation_pct", 6.0))
     res = calculate_lump_sum_calculator(principal_amount=principal, annual_return_pct=return_pct, horizon_years=horizon_years, inflation_rate_pct=inflation_pct)
+    return jsonify(res)
+
+
+@app.post("/api/calculator/goal-inflation")
+def api_calculator_goal_inflation() -> Any:
+    data = request.get_json(silent=True) or request.form or {}
+    goal_amount = float(data.get("goal_amount", 50000000.0))
+    horizon_years = float(data.get("horizon_years", 10.0))
+    inflation_pct = float(data.get("inflation_pct", 7.0))
+    res = calculate_goal_inflation_calculator(target_goal_amount=goal_amount, horizon_years=horizon_years, inflation_rate_pct=inflation_pct)
     return jsonify(res)
 
 

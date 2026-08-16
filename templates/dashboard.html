@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}?v=2.9">
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}?v=3.0">
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" defer></script>
     <script>
       (function() {
@@ -935,7 +935,10 @@
               <p>Model the power of compounding with regular SIPs, annual step-up top-ups, and inflation-adjusted lump-sum investments.</p>
             </div>
             <div class="planner-toggle-strip">
-              <button type="button" class="btn-planner-sub active" id="calcTabBtnSip" onclick="switchCalcTab('sip')">
+              <button type="button" class="btn-planner-sub active" id="calcTabBtnGoal" onclick="switchCalcTab('goal')">
+                🎯 Goal & Inflation Calculator
+              </button>
+              <button type="button" class="btn-planner-sub" id="calcTabBtnSip" onclick="switchCalcTab('sip')">
                 📈 Regular SIP
               </button>
               <button type="button" class="btn-planner-sub" id="calcTabBtnStepUp" onclick="switchCalcTab('stepup')">
@@ -947,8 +950,171 @@
             </div>
           </div>
 
+          <!-- 0. GOAL & INFLATION CALCULATOR -->
+          <div class="calc-sub-panel active" id="calcSubPanelGoal">
+            <!-- Preset Goal Quick Chips -->
+            <div class="scanner-quick-samples" style="margin-bottom: 16px;">
+              <span class="sample-label">Quick Goal Presets:</span>
+              <button type="button" class="btn btn-sample-chip" onclick="setGoalPreset(50000000, 10, 7)">🏖️ ₹5 Crore Retirement (10Y @ 7% Inf)</button>
+              <button type="button" class="btn btn-sample-chip" onclick="setGoalPreset(10000000, 10, 7)">🏡 ₹1 Crore Dream Home (10Y @ 7% Inf)</button>
+              <button type="button" class="btn btn-sample-chip" onclick="setGoalPreset(5000000, 12, 7)">🎓 ₹50 Lakh Child Education (12Y @ 7% Inf)</button>
+              <button type="button" class="btn btn-sample-chip" onclick="setGoalPreset(2500000, 5, 7)">🏎️ ₹25 Lakh Luxury Vehicle (5Y @ 7% Inf)</button>
+            </div>
+
+            <div class="calc-split-layout">
+              <!-- Left Input Parameters Card -->
+              <div class="calc-inputs-card">
+                <h3>Target Goal & Inflation Parameters</h3>
+                
+                <div class="calc-field">
+                  <div class="calc-label-row">
+                    <label>Target Goal Amount (Today's Value ₹)</label>
+                    <input type="number" id="calcGoalAmount" value="50000000" min="100000" step="500000" class="calc-num-input" oninput="runGoalCalc()">
+                  </div>
+                  <input type="range" id="calcGoalAmountSlider" min="1000000" max="100000000" step="1000000" value="50000000" class="calc-slider" oninput="syncInput('calcGoalAmount', this.value); runGoalCalc();">
+                  <div class="p-quick-chips">
+                    <button type="button" onclick="setCalcValue('calcGoalAmount', 'calcGoalAmountSlider', 2500000); runGoalCalc();">₹25 L</button>
+                    <button type="button" onclick="setCalcValue('calcGoalAmount', 'calcGoalAmountSlider', 5000000); runGoalCalc();">₹50 L</button>
+                    <button type="button" onclick="setCalcValue('calcGoalAmount', 'calcGoalAmountSlider', 10000000); runGoalCalc();">₹1 Cr</button>
+                    <button type="button" onclick="setCalcValue('calcGoalAmount', 'calcGoalAmountSlider', 50000000); runGoalCalc();">₹5 Cr</button>
+                    <button type="button" onclick="setCalcValue('calcGoalAmount', 'calcGoalAmountSlider', 100000000); runGoalCalc();">₹10 Cr</button>
+                  </div>
+                </div>
+
+                <div class="calc-field">
+                  <div class="calc-label-row">
+                    <label>Time Horizon (Years)</label>
+                    <input type="number" id="calcGoalYears" value="10" min="1" max="30" step="1" class="calc-num-input" oninput="runGoalCalc()">
+                  </div>
+                  <input type="range" id="calcGoalYearsSlider" min="1" max="30" step="1" value="10" class="calc-slider" oninput="syncInput('calcGoalYears', this.value); runGoalCalc();">
+                  <div class="p-quick-chips">
+                    <button type="button" onclick="setCalcValue('calcGoalYears', 'calcGoalYearsSlider', 3); runGoalCalc();">3Y</button>
+                    <button type="button" onclick="setCalcValue('calcGoalYears', 'calcGoalYearsSlider', 5); runGoalCalc();">5Y</button>
+                    <button type="button" onclick="setCalcValue('calcGoalYears', 'calcGoalYearsSlider', 10); runGoalCalc();">10Y</button>
+                    <button type="button" onclick="setCalcValue('calcGoalYears', 'calcGoalYearsSlider', 15); runGoalCalc();">15Y</button>
+                    <button type="button" onclick="setCalcValue('calcGoalYears', 'calcGoalYearsSlider', 20); runGoalCalc();">20Y</button>
+                  </div>
+                </div>
+
+                <div class="calc-field">
+                  <div class="calc-label-row">
+                    <label>Assumed Annual Inflation Rate (% p.a.)</label>
+                    <input type="number" id="calcGoalInflation" value="7.0" min="0" max="15" step="0.5" class="calc-num-input" oninput="runGoalCalc()">
+                  </div>
+                  <input type="range" id="calcGoalInflationSlider" min="3" max="12" step="0.5" value="7.0" class="calc-slider" oninput="syncInput('calcGoalInflation', this.value); runGoalCalc();">
+                  <div class="p-quick-chips">
+                    <button type="button" onclick="setCalcValue('calcGoalInflation', 'calcGoalInflationSlider', 5); runGoalCalc();">5% (Low Inf)</button>
+                    <button type="button" onclick="setCalcValue('calcGoalInflation', 'calcGoalInflationSlider', 7); runGoalCalc();">7% (Standard Inf)</button>
+                    <button type="button" onclick="setCalcValue('calcGoalInflation', 'calcGoalInflationSlider', 9); runGoalCalc();">9% (Education Inf)</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right Results Display Card -->
+              <div class="calc-results-card">
+                <!-- Inflation Impact Banner -->
+                <div class="inflation-summary-banner">
+                  <div class="isb-item">
+                    <span class="isb-label">Today's Target Goal</span>
+                    <strong class="isb-val" id="goalResTarget">{{ calc_goal_inflation.target_goal_amount }}</strong>
+                  </div>
+                  <div class="isb-icon">➡️</div>
+                  <div class="isb-item">
+                    <span class="isb-label">Inflation Multiplier</span>
+                    <strong class="isb-val negative font-mono" id="goalResMult">{{ calc_goal_inflation.inflation_multiplier }} ({{ calc_goal_inflation.inflation_rate_pct }} @ {{ calc_goal_inflation.horizon_years }})</strong>
+                  </div>
+                  <div class="isb-icon">➡️</div>
+                  <div class="isb-item highlight-isb">
+                    <span class="isb-label">Real Maturity Corpus Needed</span>
+                    <strong class="isb-val highlight-value" id="goalResFuture">{{ calc_goal_inflation.required_corpus_future }}</strong>
+                  </div>
+                </div>
+
+                <!-- 4 Risk Profile Tabs -->
+                <div class="risk-profile-nav-tabs" style="margin-top: 16px;">
+                  <button type="button" class="btn-risk-tab" id="riskTabBtn_low_risk" onclick="switchRiskTab('low_risk')">
+                    🛡️ Low Risk (9.5% CAGR)
+                  </button>
+                  <button type="button" class="btn-risk-tab active" id="riskTabBtn_moderate_risk" onclick="switchRiskTab('moderate_risk')">
+                    ⚖️ Moderate Risk (14.5% CAGR)
+                  </button>
+                  <button type="button" class="btn-risk-tab" id="riskTabBtn_aggressive_risk" onclick="switchRiskTab('aggressive_risk')">
+                    🚀 Aggressive Risk (18.5% CAGR)
+                  </button>
+                  <button type="button" class="btn-risk-tab" id="riskTabBtn_step_up_blend" onclick="switchRiskTab('step_up_blend')">
+                    🌟 Multi-Asset Step-Up (16% + 10% Step)
+                  </button>
+                </div>
+
+                <!-- Active Risk Scenario Content Panel -->
+                <div id="riskScenarioContainer" style="margin-top: 16px;">
+                  {% set sc = calc_goal_inflation.scenarios['moderate_risk'] %}
+                  <div class="scenario-card">
+                    <div class="sc-header">
+                      <div class="sc-title-group">
+                        <span class="sc-icon">{{ sc.icon }}</span>
+                        <div>
+                          <h4>{{ sc.name }}</h4>
+                          <p>{{ sc.description }}</p>
+                        </div>
+                      </div>
+                      <span class="badge-type {{ sc.badge }}">{{ sc.expected_cagr }} CAGR</span>
+                    </div>
+
+                    <div class="sc-metrics-grid">
+                      <div class="scm-box highlight-scm">
+                        <span class="scm-label">Required Monthly SIP</span>
+                        <strong class="scm-val positive">{{ sc.req_monthly_sip }} / mo</strong>
+                        {% if sc.is_step_up %}
+                          <span class="scm-sub">+10% Step-Up Top-Up Every Year</span>
+                        {% endif %}
+                      </div>
+                      <div class="scm-box">
+                        <span class="scm-label">Alternative One-Time Lump Sum</span>
+                        <strong class="scm-val">{{ sc.req_lumpsum }}</strong>
+                        <span class="scm-sub">If invested upfront today</span>
+                      </div>
+                    </div>
+
+                    <!-- Execution Buy Sheet Table -->
+                    <div class="sc-buy-sheet-box" style="margin-top: 16px;">
+                      <h5>Recommended Asset Allocation Basket & Execution Sheet:</h5>
+                      <div class="table-responsive">
+                        <table class="watchlist-table">
+                          <thead>
+                            <tr>
+                              <th>Asset / Mutual Fund Name</th>
+                              <th>Category</th>
+                              <th>Allocation %</th>
+                              <th>Monthly Amount</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {% for item in sc.buy_sheet %}
+                              <tr>
+                                <td><strong>{{ item.asset_name }}</strong></td>
+                                <td><span class="cat-pill cat-mf">{{ item.category }}</span></td>
+                                <td><strong>{{ item.allocation_pct }}</strong></td>
+                                <td class="highlight-value font-mono">{{ item.monthly_rupees }}</td>
+                              </tr>
+                            {% endfor %}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    <!-- Compounding Trajectory Chart SVG -->
+                    <div class="calc-chart-box" style="margin-top: 16px;">
+                      {{ sc.chart_svg|safe }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- 1. REGULAR SIP CALCULATOR -->
-          <div class="calc-sub-panel active" id="calcSubPanelSip">
+          <div class="calc-sub-panel hidden" id="calcSubPanelSip">
             <div class="calc-split-layout">
               <div class="calc-inputs-card">
                 <h3>SIP Investment Parameters</h3>
@@ -2496,24 +2662,150 @@
         }
       }
 
+      let currentGoalData = {{ calc_goal_inflation|tojson|safe }};
+      let activeRiskProfileId = 'moderate_risk';
+
       function switchCalcTab(tab) {
+        document.getElementById('calcTabBtnGoal').classList.remove('active');
         document.getElementById('calcTabBtnSip').classList.remove('active');
         document.getElementById('calcTabBtnStepUp').classList.remove('active');
         document.getElementById('calcTabBtnLumpsum').classList.remove('active');
 
+        document.getElementById('calcSubPanelGoal').classList.remove('active');
+        document.getElementById('calcSubPanelGoal').classList.add('hidden');
         document.getElementById('calcSubPanelSip').classList.remove('active');
+        document.getElementById('calcSubPanelSip').classList.add('hidden');
         document.getElementById('calcSubPanelStepUp').classList.remove('active');
+        document.getElementById('calcSubPanelStepUp').classList.add('hidden');
         document.getElementById('calcSubPanelLumpSum').classList.remove('active');
+        document.getElementById('calcSubPanelLumpSum').classList.add('hidden');
 
-        if (tab === 'sip') {
+        if (tab === 'goal') {
+          document.getElementById('calcTabBtnGoal').classList.add('active');
+          document.getElementById('calcSubPanelGoal').classList.add('active');
+          document.getElementById('calcSubPanelGoal').classList.remove('hidden');
+        } else if (tab === 'sip') {
           document.getElementById('calcTabBtnSip').classList.add('active');
           document.getElementById('calcSubPanelSip').classList.add('active');
+          document.getElementById('calcSubPanelSip').classList.remove('hidden');
         } else if (tab === 'stepup') {
           document.getElementById('calcTabBtnStepUp').classList.add('active');
           document.getElementById('calcSubPanelStepUp').classList.add('active');
+          document.getElementById('calcSubPanelStepUp').classList.remove('hidden');
         } else {
           document.getElementById('calcTabBtnLumpsum').classList.add('active');
           document.getElementById('calcSubPanelLumpSum').classList.add('active');
+          document.getElementById('calcSubPanelLumpSum').classList.remove('hidden');
+        }
+      }
+
+      function setGoalPreset(goal, years, inf) {
+        setCalcValue('calcGoalAmount', 'calcGoalAmountSlider', goal);
+        setCalcValue('calcGoalYears', 'calcGoalYearsSlider', years);
+        setCalcValue('calcGoalInflation', 'calcGoalInflationSlider', inf);
+        runGoalCalc();
+      }
+
+      function switchRiskTab(riskId) {
+        activeRiskProfileId = riskId;
+        ['low_risk', 'moderate_risk', 'aggressive_risk', 'step_up_blend'].forEach(id => {
+          const btn = document.getElementById(`riskTabBtn_${id}`);
+          if (btn) btn.classList.remove('active');
+        });
+        const activeBtn = document.getElementById(`riskTabBtn_${riskId}`);
+        if (activeBtn) activeBtn.classList.add('active');
+        renderRiskScenarioContent();
+      }
+
+      function renderRiskScenarioContent() {
+        if (!currentGoalData || !currentGoalData.scenarios) return;
+        const sc = currentGoalData.scenarios[activeRiskProfileId] || currentGoalData.scenarios['moderate_risk'];
+        if (!sc) return;
+
+        let buySheetRows = sc.buy_sheet.map(item => `
+          <tr>
+            <td><strong>${item.asset_name}</strong></td>
+            <td><span class="cat-pill cat-mf">${item.category}</span></td>
+            <td><strong>${item.allocation_pct}</strong></td>
+            <td class="highlight-value font-mono">${item.monthly_rupees}</td>
+          </tr>
+        `).join('');
+
+        const html = `
+          <div class="scenario-card">
+            <div class="sc-header">
+              <div class="sc-title-group">
+                <span class="sc-icon">${sc.icon}</span>
+                <div>
+                  <h4>${sc.name}</h4>
+                  <p>${sc.description}</p>
+                </div>
+              </div>
+              <span class="badge-type ${sc.badge}">${sc.expected_cagr} CAGR</span>
+            </div>
+
+            <div class="sc-metrics-grid">
+              <div class="scm-box highlight-scm">
+                <span class="scm-label">Required Monthly SIP</span>
+                <strong class="scm-val positive">${sc.req_monthly_sip} / mo</strong>
+                ${sc.is_step_up ? '<span class="scm-sub">+10% Step-Up Top-Up Every Year</span>' : ''}
+              </div>
+              <div class="scm-box">
+                <span class="scm-label">Alternative One-Time Lump Sum</span>
+                <strong class="scm-val">${sc.req_lumpsum}</strong>
+                <span class="scm-sub">If invested upfront today</span>
+              </div>
+            </div>
+
+            <div class="sc-buy-sheet-box" style="margin-top: 16px;">
+              <h5>Recommended Asset Allocation Basket & Execution Sheet:</h5>
+              <div class="table-responsive">
+                <table class="watchlist-table">
+                  <thead>
+                    <tr>
+                      <th>Asset / Mutual Fund Name</th>
+                      <th>Category</th>
+                      <th>Allocation %</th>
+                      <th>Monthly Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${buySheetRows}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="calc-chart-box" style="margin-top: 16px;">
+              ${sc.chart_svg}
+            </div>
+          </div>
+        `;
+
+        document.getElementById('riskScenarioContainer').innerHTML = html;
+      }
+
+      async function runGoalCalc() {
+        const goal = parseFloat(document.getElementById('calcGoalAmount').value) || 50000000;
+        const years = parseFloat(document.getElementById('calcGoalYears').value) || 10;
+        const inf = parseFloat(document.getElementById('calcGoalInflation').value) || 7;
+
+        try {
+          const res = await fetch('/api/calculator/goal-inflation', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ goal_amount: goal, horizon_years: years, inflation_pct: inf })
+          });
+          const data = await res.json();
+          if (data && data.ok) {
+            currentGoalData = data;
+            document.getElementById('goalResTarget').innerText = data.target_goal_amount;
+            document.getElementById('goalResMult').innerText = `${data.inflation_multiplier} (${data.inflation_rate_pct} @ ${data.horizon_years})`;
+            document.getElementById('goalResFuture').innerText = data.required_corpus_future;
+            renderRiskScenarioContent();
+          }
+        } catch (err) {
+          console.error("Goal Calc error:", err);
         }
       }
 
